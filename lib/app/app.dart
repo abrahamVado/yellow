@@ -12,18 +12,18 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    final themeAsync = ref.watch(themeProvider);
+    final themeConfigAsync = ref.watch(themeConfigProvider);
 
-    return themeAsync.when(
-      data: (theme) => MaterialApp.router(
+    return themeConfigAsync.when(
+      data: (config) => MaterialApp.router(
         title: 'Yellow Rider App',
-        theme: theme,
+        theme: buildAppTheme(config),
         routerConfig: router,
       ),
       loading: () => const MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator()))),
       error: (err, stack) => MaterialApp.router(
         title: 'Yellow Rider App',
-        theme: buildAppTheme(), // Fallback
+        theme: buildAppTheme(AppThemeConfig.fallback()), // Fallback
         routerConfig: router,
       ),
     );

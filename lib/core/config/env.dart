@@ -2,6 +2,8 @@ class Env {
   final String baseUrl;
   final String appEnv;
 
+  static const String apiUrl = 'https://api.softwaremia.com';
+
   Env({
     required this.baseUrl,
     required this.appEnv,
