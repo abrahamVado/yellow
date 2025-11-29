@@ -117,11 +117,17 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> registerWithPhone({
     required String phoneNumber,
     required String role,
+    String? firstName,
+    String? lastName,
+    String? email,
   }) async {
     try {
       await remote.registerWithPhone(
         phoneNumber: phoneNumber,
         role: role,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
       );
     } catch (error, stackTrace) {
       throw errorMapper.map(error, stackTrace);

@@ -29,6 +29,9 @@ abstract class AuthRepository {
   Future<void> registerWithPhone({
     required String phoneNumber,
     required String role,
+    String? firstName,
+    String? lastName,
+    String? email,
   });
 
   /// Verify SMS code and obtain final auth tokens.

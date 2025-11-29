@@ -93,12 +93,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> registerWithPhone({
     required String phoneNumber,
     required String role,
+    String? firstName,
+    String? lastName,
+    String? email,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await _repository.registerWithPhone(
         phoneNumber: phoneNumber,
         role: role,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
       );
       state = state.copyWith(isLoading: false);
       return true;
