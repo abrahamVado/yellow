@@ -54,10 +54,16 @@ class AuthRemoteDataSource {
   Future<void> registerWithPhone({
     required String phoneNumber,
     required String role,
+    String? firstName,
+    String? lastName,
+    String? email,
   }) async {
     await dio.post('/auth/register-phone', data: {
       'phone_number': phoneNumber,
       'role': role,
+      'first_name': firstName,
+      'last_name': lastName,
+      'email': email,
     });
   }
 
