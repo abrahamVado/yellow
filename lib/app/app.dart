@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'router.dart';
+import 'router.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_provider.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
@@ -10,11 +12,20 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final themeAsync = ref.watch(themeProvider);
 
-    return MaterialApp.router(
-      title: 'Yellow Rider App',
-      theme: buildAppTheme(),
-      routerConfig: router,
+    return themeAsync.when(
+      data: (theme) => MaterialApp.router(
+        title: 'Yellow Rider App',
+        theme: theme,
+        routerConfig: router,
+      ),
+      loading: () => const MaterialApp(home: Scaffold(body: Center(child: CircularProgressIndicator()))),
+      error: (err, stack) => MaterialApp.router(
+        title: 'Yellow Rider App',
+        theme: buildAppTheme(), // Fallback
+        routerConfig: router,
+      ),
     );
   }
 }

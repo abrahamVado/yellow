@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/theme/theme_provider.dart';
 
 import '../../../../application/auth/auth_providers.dart';
 import '../../../../../core/utils/validators.dart';
@@ -13,6 +14,7 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authNotifierProvider);
+    final themeConfig = ref.watch(themeConfigProvider).valueOrNull;
 
     final usernameCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
@@ -27,49 +29,61 @@ class LoginScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Iniciar Sesión')),
       body: Center(
-        child: SizedBox(
-          width: 400,
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (state.errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      state.errorMessage!,
-                      style: const TextStyle(color: Colors.red),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Card(
+            elevation: 8,
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (state.errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          state.errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    AppTextField(
+                      controller: usernameCtrl,
+                      label: 'Correo o usuario',
+                      validator: Validators.requiredField,
                     ),
-                  ),
-                AppTextField(
-                  controller: usernameCtrl,
-                  label: 'Email or username',
-                  validator: Validators.requiredField,
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      controller: passwordCtrl,
+                      label: 'Contraseña',
+                      obscureText: true,
+                      validator: Validators.requiredField,
+                    ),
+                    const SizedBox(height: 24),
+                    AppButton(
+                      label: 'Iniciar Sesión',
+                      isLoading: state.isLoading,
+                      onPressed: handleLogin,
+                      backgroundColor: themeConfig?.buttonColor,
+                      foregroundColor: themeConfig?.buttonTextColor,
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => context.go('/register'),
+                      child: const Text("¿No tienes cuenta? Regístrate"),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: passwordCtrl,
-                  label: 'Password',
-                  obscureText: true,
-                  validator: Validators.requiredField,
-                ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: 'Login',
-                  isLoading: state.isLoading,
-                  onPressed: handleLogin,
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.go('/register'),
-                  child: const Text("Don't have an account? Register"),
-                ),
-              ],
+              ),
             ),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/theme/theme_provider.dart';
 
 import '../../../../application/auth/auth_providers.dart';
 
@@ -22,6 +23,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Artificial delay for better UX (optional)
     await Future.delayed(const Duration(seconds: 1));
 
+    // Preload theme settings
+    try {
+      await ref.read(themeConfigProvider.future);
+    } catch (e) {
+      debugPrint('Error preloading theme: $e');
+    }
+
     await ref.read(authNotifierProvider.notifier).checkAuthStatus();
 
     if (!mounted) return;
@@ -30,7 +38,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (state.isAuthenticated) {
       context.go('/dashboard');
     } else {
-      context.go('/login');
+      context.go('/welcome');
     }
   }
 
