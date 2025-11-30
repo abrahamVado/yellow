@@ -1,92 +1,290 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../app/theme/theme_provider.dart';
-
 import '../../../../application/auth/auth_providers.dart';
-import '../../../../../core/utils/validators.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../../app/theme/theme_provider.dart';
+import '../../../../core/config/env.dart';
+import '../widgets/auth_wave_background.dart';
 
-class LoginScreen extends ConsumerWidget {
+
+
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(authNotifierProvider);
-    final themeConfig = ref.watch(themeConfigProvider).valueOrNull;
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
 
-    final usernameCtrl = TextEditingController();
-    final passwordCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  bool _isCodeSent = false;
 
-    void handleLogin() {
-      if (!formKey.currentState!.validate()) return;
-      ref.read(authNotifierProvider.notifier).login(
-            username: usernameCtrl.text.trim(),
-            password: passwordCtrl.text.trim(),
-          );
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _otpController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendCode() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) return;
+
+    // Split name
+    String firstName = '';
+    String lastName = '';
+    final fullName = _nameController.text.trim();
+    if (fullName.isNotEmpty) {
+      final parts = fullName.split(' ');
+      firstName = parts.first;
+      if (parts.length > 1) {
+        lastName = parts.sublist(1).join(' ');
+      }
     }
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar Sesión')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Card(
-            elevation: 8,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+    // Trigger registration/SMS sending
+    final success = await ref.read(authNotifierProvider.notifier).registerWithPhone(
+          phoneNumber: phone,
+          role: 'driver',
+          firstName: firstName,
+          lastName: lastName,
+          email: _emailController.text.trim(),
+        );
+
+    if (success) {
+      setState(() {
+        _isCodeSent = true;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Code sent! Check your SMS.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _verifyCode() async {
+    final phone = _phoneController.text.trim();
+    final code = _otpController.text.trim();
+    if (phone.isEmpty || code.isEmpty) return;
+
+    final success = await ref
+        .read(authNotifierProvider.notifier)
+        .verifySmsCode(phone: phone, code: code);
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login Successful!')),
+        );
+        context.go('/dashboard');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final authState = ref.watch(authNotifierProvider);
+    final themeConfig = ref.watch(themeConfigProvider).valueOrNull;
+    print('LoginScreen: themeConfig is ${themeConfig == null ? 'null' : 'not null'}');
+    if (themeConfig != null) {
+      print('LoginScreen: logoUrl is "${themeConfig.logoUrl}"');
+      print('LoginScreen: Full URL is "${Env.apiUrl}${themeConfig.logoUrl}"');
+    }
+    final primaryColor = themeConfig?.primaryColor ?? Colors.black;
+    final buttonColor = themeConfig?.buttonColor ?? Colors.black;
+    final buttonTextColor = themeConfig?.buttonTextColor ?? Colors.white;
+
+    return AuthWaveBackground(
+      child: Stack(
+        children: [
+          // Back Button
+          Positioned(
+            top: 16,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => context.go('/welcome'),
             ),
-            child: Padding(
+          ),
+
+          Center(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (state.errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          state.errorMessage!,
-                          style: const TextStyle(color: Colors.red),
+              child: Card(
+                elevation: 8,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (themeConfig?.logoUrl != null && themeConfig!.logoUrl.isNotEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 24),
+                            child: Image.network(
+                              '${Env.apiUrl}${themeConfig.logoUrl}',
+                              height: 80,
+                              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                            ),
+                          ),
+                        ),
+                      Text(
+                        _isCodeSent ? 'Verification' : 'Register',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87,
                         ),
                       ),
-                    AppTextField(
-                      controller: usernameCtrl,
-                      label: 'Correo o usuario',
-                      validator: Validators.requiredField,
-                    ),
-                    const SizedBox(height: 16),
-                    AppTextField(
-                      controller: passwordCtrl,
-                      label: 'Contraseña',
-                      obscureText: true,
-                      validator: Validators.requiredField,
-                    ),
-                    const SizedBox(height: 24),
-                    AppButton(
-                      label: 'Iniciar Sesión',
-                      isLoading: state.isLoading,
-                      onPressed: handleLogin,
-                      backgroundColor: themeConfig?.buttonColor,
-                      foregroundColor: themeConfig?.buttonTextColor,
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: const Text("¿No tienes cuenta? Regístrate"),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 40,
+                        height: 3,
+                        color: buttonColor,
+                      ),
+                      const SizedBox(height: 24),
+
+                      if (authState.errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Text(
+                            authState.errorMessage!,
+                            style: TextStyle(color: Colors.red.shade800, fontSize: 12),
+                          ),
+                        ),
+
+                      if (!_isCodeSent) ...[
+                        // Name Field
+                        Text('Full Name', style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: _nameController,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
+                            hintText: 'John Doe',
+                            prefixIcon: Icon(Icons.person_outline, size: 18),
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Email Field
+                        Text('Email', style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
+                            hintText: 'john@example.com',
+                            prefixIcon: Icon(Icons.email_outlined, size: 18),
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Phone Field
+                        Text('Phone Number', style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
+                            hintText: '+1 555 123 4567',
+                            prefixIcon: Icon(Icons.phone_android, size: 18),
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                      ] else ...[
+                        // OTP Field
+                        Text('Enter SMS Code', style: theme.textTheme.bodySmall?.copyWith(color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: _otpController,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
+                            hintText: '123456',
+                            prefixIcon: Icon(Icons.lock_clock, size: 18),
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _isCodeSent = false;
+                              _otpController.clear();
+                            });
+                          },
+                          child: Text('Change Phone Number', style: TextStyle(color: buttonColor)),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Action Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: buttonColor,
+                            foregroundColor: buttonTextColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: authState.isLoading
+                              ? null
+                              : (_isCodeSent ? _verifyCode : _sendCode),
+                          child: authState.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : Text(
+                                  _isCodeSent ? 'Verify Code' : 'Continue',
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../application/dashboard/dashboard_providers.dart';
+import '../../../../app/theme/theme_provider.dart';
+import '../../../../core/config/env.dart';
 import '../../../shared/layout/app_scaffold.dart';
 import '../../../shared/layout/app_drawer.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -39,8 +41,17 @@ class DashboardScreen extends ConsumerWidget {
       );
     }
 
+    final themeConfig = ref.watch(themeConfigProvider).valueOrNull;
+
     return AppScaffold(
       title: 'Dashboard',
+      titleWidget: themeConfig != null && themeConfig.logoUrl.isNotEmpty
+          ? Image.network(
+              '${Env.apiUrl}${themeConfig.logoUrl}',
+              height: 40,
+              errorBuilder: (context, error, stackTrace) => const Text('Dashboard'),
+            )
+          : null,
       drawer: const AppDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16),
