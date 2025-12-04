@@ -3,7 +3,7 @@ import 'dart:io';
 
 Future<void> main() async {
   const appId = 'com.matheydriver.yellow';
-  const apiUrl = 'https://api.softwaremia.com/api/admin/settings/$appId';
+  const apiUrl = 'https://api.softwaremia.com/api/settings/$appId';
   const targetFile = 'lib/core/config/app_config.dart';
 
   print('Fetching configuration for $appId from $apiUrl...');
