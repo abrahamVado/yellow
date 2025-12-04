@@ -6,7 +6,7 @@ import 'router.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
-import 'package:black/core/services/fcm_service.dart';
+import 'package:yellow/core/services/fcm_service.dart';
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
