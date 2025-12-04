@@ -17,7 +17,8 @@ Future<void> main() async {
     }
 
     final responseBody = await response.transform(utf8.decoder).join();
-    final data = json.decode(responseBody);
+    final jsonResponse = json.decode(responseBody);
+    final data = jsonResponse['data'];
 
     print('Configuration fetched successfully.');
     print('Generating $targetFile...');
