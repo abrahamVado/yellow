@@ -21,6 +21,13 @@ Future<void> main() async {
     final data = jsonResponse['data'];
 
     print('Configuration fetched successfully.');
+
+    // Download Logo
+    final logoUrl = data['logo_url'];
+    if (logoUrl != null && logoUrl.toString().isNotEmpty) {
+      await _downloadLogo(logoUrl.toString());
+    }
+
     print('Generating $targetFile...');
 
     final content = _generateAppConfig(data, appId);
@@ -30,6 +37,26 @@ Future<void> main() async {
   } catch (e) {
     print('Error fetching configuration: $e');
     exit(1);
+  }
+}
+
+Future<void> _downloadLogo(String url) async {
+  try {
+    final fullUrl = url.startsWith('http') ? url : 'https://api.softwaremia.com$url';
+    print('Downloading logo from $fullUrl...');
+    
+    final request = await HttpClient().getUrl(Uri.parse(fullUrl));
+    final response = await request.close();
+    
+    if (response.statusCode == 200) {
+      final bytes = await response.expand((chunk) => chunk).toList();
+      await File('assets/images/logo.jpeg').writeAsBytes(bytes);
+      print('Logo downloaded to assets/images/logo.jpeg');
+    } else {
+      print('Failed to download logo: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error downloading logo: $e');
   }
 }
 
@@ -54,7 +81,7 @@ class AppConfig {
   static const String buttonText = '${_escapeString(data['button_text'] ?? 'Continue')}';
 
   // Assets
-  static const String logoUrl = '${data['logo_url'] ?? ''}';
+  static const String logoUrl = 'assets/images/logo_padded.jpeg';
 }
 ''';
 }

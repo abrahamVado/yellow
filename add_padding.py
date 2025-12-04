@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 
-def add_padding(input_path, output_path, padding_ratio=0.3, background_color=(0, 0, 0)):
+def add_padding(input_path, output_path, padding_ratio=0.4, background_color=(0, 0, 0)):
     try:
         img = Image.open(input_path)
         original_width, original_height = img.size
@@ -34,8 +34,8 @@ def add_padding(input_path, output_path, padding_ratio=0.3, background_color=(0,
         print(f"Error processing image: {e}")
 
 if __name__ == "__main__":
-    input_file = "assets/icon.jpeg"
-    output_file = "assets/icon_padded.jpeg"
+    input_file = "assets/images/logo.jpeg"
+    output_file = "assets/images/logo_padded.jpeg"
     
     if os.path.exists(input_file):
         add_padding(input_file, output_file)
