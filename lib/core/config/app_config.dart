@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppConfig {
-  static const String appId = 'com.yamato.black';
+  static const String appId = 'com.matheydriver.yellow';
   
   // Colors
   static const Color primaryColor = Color(0xFF000000);
