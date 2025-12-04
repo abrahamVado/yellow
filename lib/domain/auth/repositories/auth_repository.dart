@@ -38,8 +38,13 @@ abstract class AuthRepository {
   Future<AuthToken> verifySmsCode({
     required String phone,
     required String code,
+    String? idToken,
   });
 
   /// Get the stored access token.
   Future<String?> getToken();
+
+  /// Fetch current user profile from backend.
+  Future<User> getProfile();
+  Future<void> updateFCMToken(String token);
 }

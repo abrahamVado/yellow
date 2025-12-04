@@ -16,6 +16,9 @@ class LoggingInterceptor extends Interceptor {
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     print('❌ ${err.response?.statusCode} ${err.requestOptions.uri}');
+    if (err.response?.data != null) {
+      print('❌ Body: ${err.response?.data}');
+    }
     handler.next(err);
   }
 }

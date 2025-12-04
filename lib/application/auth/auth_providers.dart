@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/fcm_service.dart';
 
 import '../../core/network/dio_client.dart';
 import '../../core/storage/token_storage.dart';
@@ -29,5 +30,6 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authNotifierProvider =
     StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repo = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repo);
+  final fcmService = ref.watch(fcmServiceProvider);
+  return AuthNotifier(repo, fcmService);
 });

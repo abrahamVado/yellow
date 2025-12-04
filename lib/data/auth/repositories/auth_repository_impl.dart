@@ -5,6 +5,8 @@ import '../../../domain/auth/entities/user.dart';
 import '../../../domain/auth/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/login_request_dto.dart';
+import '../models/user_profile_model.dart';
+import '../../../domain/auth/exceptions.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remote;
@@ -94,6 +96,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return token;
     } catch (error, stackTrace) {
+      if (error is UserNotFoundException || error is PendingVerificationException) {
+        rethrow;
+      }
       throw errorMapper.map(error, stackTrace);
     }
   }
@@ -109,6 +114,9 @@ class AuthRepositoryImpl implements AuthRepository {
         phoneNumber: phoneNumber,
       );
     } catch (error, stackTrace) {
+      if (error is PendingVerificationException) {
+        rethrow;
+      }
       throw errorMapper.map(error, stackTrace);
     }
   }
@@ -138,9 +146,10 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<AuthToken> verifySmsCode({
     required String phone,
     required String code,
+    String? idToken,
   }) async {
     try {
-      final response = await remote.verifySmsCode(phone: phone, code: code);
+      final response = await remote.verifySmsCode(phone: phone, code: code, idToken: idToken);
       final token = AuthToken(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
@@ -159,5 +168,24 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<String?> getToken() async {
     return await tokenStorage.readAccessToken();
+  }
+
+  @override
+  Future<UserProfileModel> getProfile() async {
+    try {
+      return await remote.getProfile();
+    } catch (e, stackTrace) {
+      throw errorMapper.map(e, stackTrace);
+    }
+  }
+
+  @override
+  Future<void> updateFCMToken(String token) async {
+    try {
+      await remote.updateFCMToken(token);
+    } catch (e) {
+      // Log error but don't crash app for token update failure
+      print("Failed to update FCM token: $e");
+    }
   }
 }

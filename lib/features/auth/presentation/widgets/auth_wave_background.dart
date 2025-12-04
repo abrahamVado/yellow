@@ -34,11 +34,11 @@ class _AuthWaveBackgroundState extends ConsumerState<AuthWaveBackground>
 
   @override
   Widget build(BuildContext context) {
-    final configAsync = ref.watch(themeConfigProvider);
+    final config = ref.watch(themeConfigProvider);
     
     // Default colors if loading/error (though usually parent handles loading)
-    final waveColor1 = configAsync.value?.waveColor1 ?? const Color(0xFFFF7C7C);
-    final waveColor2 = configAsync.value?.waveColor2 ?? const Color(0xFFFF8D8D);
+    final waveColor1 = config.waveColor1;
+    final waveColor2 = config.waveColor2;
 
     return Scaffold(
       backgroundColor: waveColor2,

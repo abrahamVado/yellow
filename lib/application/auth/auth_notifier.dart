@@ -1,12 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/auth/repositories/auth_repository.dart';
+import '../../domain/auth/exceptions.dart';
 import 'auth_state.dart';
+
+import '../../core/services/fcm_service.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
+  final FCMService _fcmService;
 
-  AuthNotifier(this._repository) : super(AuthState.initial());
+  AuthNotifier(this._repository, this._fcmService) : super(AuthState.initial());
+
+  Future<void> _registerFCM() async {
+    try {
+      await _fcmService.initialize();
+      final token = await _fcmService.getToken();
+      if (token != null) {
+        await _repository.updateFCMToken(token);
+      }
+    } catch (e) {
+      print("Error registering FCM: $e");
+    }
+  }
 
   Future<void> login({
     required String username,
@@ -19,6 +35,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         isAuthenticated: true,
       );
+      _registerFCM();
     } catch (error) {
       state = state.copyWith(
         isLoading: false,
@@ -57,6 +74,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: true,
+      );
+      _registerFCM();
+    } on UserNotFoundException {
+      state = state.copyWith(
+        isLoading: false,
+        isUserNotFound: true,
+      );
+    } on PendingVerificationException catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        pendingVerificationPhone: e.phone,
       );
     } catch (error) {
       state = state.copyWith(
@@ -121,14 +149,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> verifySmsCode({
     required String phone,
     required String code,
+    String? idToken,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      await _repository.verifySmsCode(phone: phone, code: code);
+      await _repository.verifySmsCode(phone: phone, code: code, idToken: idToken);
       state = state.copyWith(
         isLoading: false,
         isAuthenticated: true,
       );
+      _registerFCM();
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -149,6 +179,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           isAuthenticated: true,
         );
+        // Fetch profile if authenticated
+        await fetchProfile();
+        _registerFCM();
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -160,6 +193,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         isAuthenticated: false,
       );
+    }
+  }
+
+  Future<void> fetchProfile() async {
+    // Don't set global loading here to avoid full screen spinner if background fetch
+    try {
+      final user = await _repository.getProfile();
+      state = state.copyWith(user: user);
+    } catch (e) {
+      // If profile fetch fails, maybe token is invalid?
+      // For now just log or ignore, or set error
+      print('Failed to fetch profile: $e');
     }
   }
 }

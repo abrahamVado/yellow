@@ -14,7 +14,7 @@ class RegisterScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authNotifierProvider);
-    final themeConfig = ref.watch(themeConfigProvider).valueOrNull;
+    final themeConfig = ref.watch(themeConfigProvider);
 
     final phoneCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -28,7 +28,7 @@ class RegisterScreen extends ConsumerWidget {
       final notifier = ref.read(authNotifierProvider.notifier);
       final ok = await notifier.registerWithPhone(
         phoneNumber: phone,
-        role: 'driver', // Hardcoded for Black App
+        role: 'client', // Updated for Yellow App
       );
 
       if (ok && context.mounted) {
@@ -65,21 +65,21 @@ class RegisterScreen extends ConsumerWidget {
                       ),
                     AppTextField(
                       controller: phoneCtrl,
-                      label: 'Número de teléfono',
+                      label: 'Número de Teléfono',
                       validator: Validators.requiredField,
                     ),
                     const SizedBox(height: 16),
                     AppButton(
-                      label: 'Registrarse con teléfono',
+                      label: 'Registrarse con Teléfono',
                       isLoading: state.isLoading,
                       onPressed: handleRegister,
-                      backgroundColor: themeConfig?.buttonColor,
-                      foregroundColor: themeConfig?.buttonTextColor,
+                      backgroundColor: themeConfig.buttonColor,
+                      foregroundColor: themeConfig.buttonTextColor,
                     ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => context.go('/login'),
-                      child: const Text('¿Ya tienes una cuenta? Iniciar sesión'),
+                      child: const Text('¿Ya tienes cuenta? Inicia Sesión'),
                     ),
                   ],
                 ),

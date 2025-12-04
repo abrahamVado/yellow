@@ -10,10 +10,7 @@ class AppDrawer extends StatelessWidget {
       child: ListView(
         children: [
           const DrawerHeader(child: Text('Menu')),
-          ListTile(
-            title: const Text('Dashboard'),
-            onTap: () => context.go('/dashboard'),
-          ),
+
           ListTile(
             title: const Text('Login'),
             onTap: () => context.go('/login'),

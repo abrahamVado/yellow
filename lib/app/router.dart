@@ -8,7 +8,7 @@ import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/auth/presentation/screens/verify_code_screen.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
-import '../features/dashboard/presentation/screens/details_screen.dart';
+
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -53,15 +53,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardScreen(),
-        routes: [
-          GoRoute(
-            path: ':id',
-            builder: (context, state) {
-              final id = state.pathParameters['id']!;
-              return DashboardDetailsScreen(id: id);
-            },
-          ),
-        ],
       ),
     ],
   );

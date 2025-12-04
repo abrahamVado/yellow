@@ -16,7 +16,7 @@ class VerifyCodeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(authNotifierProvider);
-    final themeConfig = ref.watch(themeConfigProvider).valueOrNull;
+    final themeConfig = ref.watch(themeConfigProvider);
 
     final codeCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -67,8 +67,8 @@ class VerifyCodeScreen extends ConsumerWidget {
                       label: 'Verificar',
                       isLoading: state.isLoading,
                       onPressed: handleVerify,
-                      backgroundColor: themeConfig?.buttonColor,
-                      foregroundColor: themeConfig?.buttonTextColor,
+                      backgroundColor: themeConfig.buttonColor,
+                      foregroundColor: themeConfig.buttonTextColor,
                     ),
                   ],
                 ),

@@ -23,12 +23,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Artificial delay for better UX (optional)
     await Future.delayed(const Duration(seconds: 1));
 
-    // Preload theme settings
-    try {
-      await ref.read(themeConfigProvider.future);
-    } catch (e) {
-      debugPrint('Error preloading theme: $e');
-    }
+    // Theme is now static, no need to preload
+    // try {
+    //   await ref.read(themeConfigProvider.future);
+    // } catch (e) {
+    //   debugPrint('Error preloading theme: $e');
+    // }
 
     await ref.read(authNotifierProvider.notifier).checkAuthStatus();
 

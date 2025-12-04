@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 
 import '../models/login_request_dto.dart';
 import '../models/login_response_dto.dart';
+import '../models/user_profile_model.dart';
+import '../../../domain/auth/exceptions.dart';
 
 class AuthRemoteDataSource {
   final Dio dio;
@@ -31,12 +33,28 @@ class AuthRemoteDataSource {
   }
 
   Future<LoginResponseDto> loginWithGoogle(String idToken) async {
-    final response = await dio.post<Map<String, dynamic>>(
-      '/auth/google',
-      data: {'id_token': idToken},
-    );
-    final data = response.data!;
-    return LoginResponseDto.fromJson(data);
+    try {
+      final response = await dio.post<Map<String, dynamic>>(
+        '/auth/google',
+        data: {'id_token': idToken},
+      );
+      final data = response.data!;
+      return LoginResponseDto.fromJson(data);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        final data = e.response?.data as Map<String, dynamic>?;
+        throw UserNotFoundException(
+          email: data?['email'],
+          name: data?['name'],
+        );
+      } else if (e.response?.statusCode == 202) {
+        final data = e.response?.data as Map<String, dynamic>?;
+        throw PendingVerificationException(
+          phone: data?['phone_number'],
+        );
+      }
+      rethrow;
+    }
   }
 
   /// Register user with Google + phone, backend should send SMS and return 200 OK.
@@ -44,10 +62,17 @@ class AuthRemoteDataSource {
     required String idToken,
     required String phoneNumber,
   }) async {
-    await dio.post('/auth/register-phone-google', data: {
-      'id_token': idToken,
-      'phone_number': phoneNumber,
-    });
+    try {
+      await dio.post('/auth/register-phone-google', data: {
+        'id_token': idToken,
+        'phone_number': phoneNumber,
+      });
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 202) {
+        throw PendingVerificationException(phone: phoneNumber);
+      }
+      rethrow;
+    }
   }
 
   /// Register user with just phone number.
@@ -71,15 +96,27 @@ class AuthRemoteDataSource {
   Future<LoginResponseDto> verifySmsCode({
     required String phone,
     required String code,
+    String? idToken,
   }) async {
     final response = await dio.post<Map<String, dynamic>>(
       '/auth/verify-phone-code',
       data: {
         'phone_number': phone,
         'code': code,
+        if (idToken != null) 'id_token': idToken,
       },
     );
     final data = response.data!;
     return LoginResponseDto.fromJson(data);
+  }
+
+  Future<UserProfileModel> getProfile() async {
+    final response = await dio.get<Map<String, dynamic>>('/auth/me');
+    final data = response.data!;
+    return UserProfileModel.fromJson(data);
+  }
+
+  Future<void> updateFCMToken(String token) async {
+    await dio.post('/auth/fcm-token', data: {'fcm_token': token});
   }
 }
