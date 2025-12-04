@@ -23,7 +23,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Artificial delay for better UX (optional)
     await Future.delayed(const Duration(seconds: 1));
 
-    // Theme is now static, no need to preload
+    // Theme is static, no need to preload
     // try {
     //   await ref.read(themeConfigProvider.future);
     // } catch (e) {
