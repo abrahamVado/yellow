@@ -115,7 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             top: 16,
             left: 16,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () => context.go('/welcome'),
             ),
           ),
