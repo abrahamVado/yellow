@@ -8,8 +8,8 @@ class AppConfig {
   static const Color fontColor = Color(0xFFFFFFFF);
   static const Color waveColor1 = Color(0xFFfed26c);
   static const Color waveColor2 = Color(0xFFffb300);
-  static const Color buttonColor = Color(0xFFf4af0c);
-  static const Color buttonTextColor = Color(0xFFFFFFFF);
+  static const Color buttonColor = Color(0xFFf9b419);
+  static const Color buttonTextColor = Color(0xFF000000);
 
   // Text
   static const String title = 'Bienvenido';
