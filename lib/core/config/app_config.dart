@@ -12,7 +12,7 @@ class AppConfig {
   static const Color buttonTextColor = Color(0xFFFFFFFF);
 
   // Text
-  static const String title = 'Bienvenido DEBUG';
+  static const String title = 'Bienvenido';
   static const String subtitle = 'Experimenta una nueva manera de transporte';
   static const String buttonText = 'Siguiente';
 
