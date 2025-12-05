@@ -40,8 +40,8 @@ class _ParallaxBackgroundState extends State<ParallaxBackground> {
           top: -50 - _y,
           right: -50 - _x,
           bottom: -50 - _y,
-          child: Image.network(
-            'https://media.wired.com/photos/59269cd37034dc5f91bec0f1/master/pass/GoogleMapTA.jpg', // Placeholder map image
+          child: Image.asset(
+            'assets/images/map_bg.png', // Local map image
             fit: BoxFit.cover,
           ),
         ),
