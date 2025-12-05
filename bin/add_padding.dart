@@ -43,8 +43,8 @@ void main() async {
     height: originalHeight,
     numChannels: 3, // RGB
   );
-  // Fill with black
-  fill(background, color: ColorRgb8(0, 0, 0));
+  // Fill with #fafafa (250, 250, 250)
+  fill(background, color: ColorRgb8(250, 250, 250));
 
   // Calculate position to center
   final xOffset = (originalWidth - newWidth) ~/ 2;
