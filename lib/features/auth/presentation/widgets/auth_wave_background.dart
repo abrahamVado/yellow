@@ -39,6 +39,9 @@ class _AuthWaveBackgroundState extends ConsumerState<AuthWaveBackground>
     // Default colors if loading/error (though usually parent handles loading)
     final waveColor1 = config.waveColor1;
     final waveColor2 = config.waveColor2;
+    
+    debugPrint('AuthWaveBackground: primaryColor = ${config.primaryColor}');
+    debugPrint('AuthWaveBackground: waveColor2 = ${waveColor2}');
 
     return Scaffold(
       backgroundColor: waveColor2,
