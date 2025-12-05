@@ -52,7 +52,7 @@ class _AuthWaveBackgroundState extends ConsumerState<AuthWaveBackground>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    waveColor1,
+                    config.primaryColor,
                     waveColor2,
                   ],
                 ),
