@@ -56,7 +56,7 @@ class _AuthWaveBackgroundState extends ConsumerState<AuthWaveBackground>
                   end: Alignment.bottomRight,
                   colors: [
                     config.primaryColor,
-                    waveColor2,
+                    config.primaryColor,
                   ],
                 ),
               ),
@@ -71,7 +71,7 @@ class _AuthWaveBackgroundState extends ConsumerState<AuthWaveBackground>
                 return CustomPaint(
                   painter: _WavePainter(
                     animationValue: _controller.value,
-                    color: Colors.white.withOpacity(0.2),
+                    color: waveColor1.withOpacity(0.2),
                   ),
                 );
               },
@@ -84,7 +84,7 @@ class _AuthWaveBackgroundState extends ConsumerState<AuthWaveBackground>
                 return CustomPaint(
                   painter: _WavePainter(
                     animationValue: _controller.value + 0.5,
-                    color: Colors.white.withOpacity(0.1),
+                    color: waveColor2.withOpacity(0.2),
                     offset: 50.0,
                   ),
                 );
