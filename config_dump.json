@@ -1,0 +1,16 @@
+﻿{
+    "data":  {
+                 "app_id":  "com.matheydriver.yellow",
+                 "button_color":  "#f4af0c",
+                 "button_text":  "Siguiente",
+                 "button_text_color":  "#FFFFFF",
+                 "font_color":  "#FFFFFF",
+                 "logo_url":  "/uploads/2025/12/04/1764887574364773609_whitelogo.jpeg",
+                 "primary_color":  "#fafafa",
+                 "subtitle":  "Experimenta una nueva manera de transporte",
+                 "title":  "Bienvenido",
+                 "wave_color_1":  "#fafafa",
+                 "wave_color_2":  "#e3c43e"
+             },
+    "status":  "success"
+}
