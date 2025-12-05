@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:yellow/features/dashboard/presentation/screens/request_taxi_screen.dart';
-import 'package:yellow/features/dashboard/presentation/screens/my_trips_screen.dart';
-import 'package:yellow/features/dashboard/presentation/screens/account_statement_screen.dart';
 
 class HomeMenuPanel extends StatelessWidget {
   const HomeMenuPanel({super.key});
@@ -31,7 +28,7 @@ class HomeMenuPanel extends StatelessWidget {
               icon: Icons.local_taxi,
               label: 'Pedir un taxi',
               onTap: () {
-                Navigator.of(context).push(_createRoute(const RequestTaxiScreen(), const Offset(0, 1))); // Slide from Bottom
+                context.push('/dashboard/request-taxi');
               },
             ),
             const Divider(),
@@ -39,7 +36,7 @@ class HomeMenuPanel extends StatelessWidget {
               icon: Icons.history,
               label: 'Mis viajes',
               onTap: () {
-                Navigator.of(context).push(_createRoute(const MyTripsScreen(), const Offset(-1, 0))); // Slide from Left
+                context.push('/dashboard/my-trips');
               },
             ),
             const Divider(),
@@ -47,7 +44,7 @@ class HomeMenuPanel extends StatelessWidget {
               icon: Icons.account_balance_wallet,
               label: 'Estado de cuenta',
               onTap: () {
-                Navigator.of(context).push(_createRoute(const AccountStatementScreen(), const Offset(1, 0))); // Slide from Right
+                context.push('/dashboard/account-statement');
               },
             ),
           ],
@@ -56,23 +53,7 @@ class HomeMenuPanel extends StatelessWidget {
     );
   }
 
-  Route _createRoute(Widget page, Offset beginOffset) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        var begin = beginOffset;
-        const end = Offset.zero;
-        const curve = Curves.ease;
-
-        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
-      },
-    );
-  }
+  // Route builder removed as we are using GoRouter now
 }
 
 class _MenuOption extends StatelessWidget {
