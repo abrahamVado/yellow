@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -379,6 +380,28 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           ],
                         ),
                       ),
+                    
+                    // Scheduled Time Display & Picker
+                    if (taxiState.estimatedFare > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                             if (taxiState.scheduledTime != null)
+                                Text(
+                                  "Programado: ${DateFormat('dd MMM HH:mm').format(taxiState.scheduledTime!)}",
+                                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                                ),
+                             const SizedBox(width: 10),
+                             TextButton.icon(
+                               onPressed: () => _selectDateTime(context, taxiNotifier),
+                               icon: const Icon(Icons.calendar_today, size: 16),
+                               label: Text(taxiState.scheduledTime != null ? "Cambiar" : "Programar"),
+                             )
+                          ],
+                        ),
+                      ),
                       
                     // Placeholder Price or "Request" Button
                     SizedBox(
@@ -413,9 +436,12 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
                           }
                         },
-                        child: const Text('Confirmar Viaje', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            taxiState.scheduledTime != null ? 'Reservar Viaje' : 'Confirmar Viaje', 
+                            style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)
+                          ),
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 12),
                     // Cancel / Reset Button
                     SizedBox(
@@ -443,6 +469,46 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
         ],
       ),
     );
+  }
+  Future<void> _selectDateTime(BuildContext context, TaxiRequestNotifier notifier) async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 7)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+             colorScheme: const ColorScheme.light(primary: Colors.black),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (date != null && context.mounted) {
+       final time = await showTimePicker(
+         context: context,
+         initialTime: TimeOfDay.now(),
+         builder: (context, child) {
+            return Theme(
+              data: ThemeData.light().copyWith(
+                 colorScheme: const ColorScheme.light(primary: Colors.black),
+              ),
+              child: child!,
+            );
+         },
+       );
+       
+       if (time != null) {
+          final scheduled = DateTime(
+            date.year, date.month, date.day,
+            time.hour, time.minute
+          );
+          notifier.setScheduledTime(scheduled);
+       }
+    }
   }
 }
 

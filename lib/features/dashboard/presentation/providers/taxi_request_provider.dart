@@ -24,6 +24,7 @@ class TaxiRequestState {
   final double estimatedFare;
   final List<dynamic> myTrips;
   final String? errorMessage;
+  final DateTime? scheduledTime;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -38,7 +39,9 @@ class TaxiRequestState {
     this.isOriginInputVisible = false,
     this.estimatedFare = 0.0,
     this.myTrips = const [],
+    this.myTrips = const [],
     this.errorMessage,
+    this.scheduledTime,
   });
 
   TaxiRequestState copyWith({
@@ -54,7 +57,9 @@ class TaxiRequestState {
     bool? isOriginInputVisible,
     double? estimatedFare,
     List<dynamic>? myTrips,
+    List<dynamic>? myTrips,
     String? errorMessage,
+    DateTime? scheduledTime,
   }) {
     return TaxiRequestState(
       originAddress: originAddress ?? this.originAddress,
@@ -69,7 +74,9 @@ class TaxiRequestState {
       isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
       estimatedFare: estimatedFare ?? this.estimatedFare,
       myTrips: myTrips ?? this.myTrips,
+      myTrips: myTrips ?? this.myTrips,
       errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
+      scheduledTime: scheduledTime ?? this.scheduledTime,
     );
   }
 }
@@ -359,6 +366,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'fare': state.estimatedFare, 
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
+        'scheduled_at': state.scheduledTime?.toIso8601String(),
       };
       
       print('Creating Trip with Payload: $data'); // DEBUG LOG
@@ -418,10 +426,12 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   void reset() {
        state = TaxiRequestState(
           sessionToken: _uuid.v4(),
-          // Don't set origin here, let UI or user trigger it.
-          // Or we can keep current origin? 
-          // User said "reset all inputs", so we clear everything.
+          scheduledTime: null,
        );
+  }
+
+  void setScheduledTime(DateTime? date) {
+      state = state.copyWith(scheduledTime: date);
   }
 }
 
