@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'app/app.dart';
-import 'core/config/env.dart';
-import 'core/config/app_config.dart';
+import 'package:yellow/app/app.dart';
+import 'package:yellow/core/config/env.dart';
+import 'package:yellow/core/config/app_config.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';

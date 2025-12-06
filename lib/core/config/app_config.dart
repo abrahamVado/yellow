@@ -30,4 +30,3 @@ final appConfigProvider = Provider<AppConfig>((ref) {
   // This should ideally be initialized in main or overridden
   throw UnimplementedError('appConfigProvider must be overridden in main.dart');
 });
-
