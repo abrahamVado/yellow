@@ -60,7 +60,13 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
     // Format date if needed
     final createdAt = trip['created_at'] ?? '';
     final status = trip['status'] ?? 'pending';
-    final fare = trip['fare'] ?? 0.0;
+    final createdAt = trip['created_at'] ?? '';
+    final status = trip['status'] ?? 'pending';
+    final fare = _parseDouble(trip['fare']);
+    final originLat = _parseDouble(trip['origin_lat']);
+    final originLng = _parseDouble(trip['origin_lng']);
+    final destLat = _parseDouble(trip['dest_lat']);
+    final destLng = _parseDouble(trip['dest_lng']);
     
     Color statusColor = Colors.grey;
     String statusText = status;
@@ -106,7 +112,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
                  const SizedBox(width: 4),
                  Expanded(
                    child: Text(
-                     "Origen: ${trip['origin_lat'].toStringAsFixed(5)}, ${trip['origin_lng'].toStringAsFixed(5)}",
+                     "Origen: ${originLat.toStringAsFixed(5)}, ${originLng.toStringAsFixed(5)}",
                      style: const TextStyle(fontSize: 14, color: Colors.black),
                      overflow: TextOverflow.ellipsis,
                    ),
@@ -114,15 +120,15 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            // Destination
-             if (trip['dest_lat'] != null)
+             // Destination
+             if (destLat != 0.0)
              Row(
               children: [
                  const Icon(Icons.location_on, size: 16, color: Colors.green),
                  const SizedBox(width: 4),
                  Expanded(
                    child: Text(
-                     "Destino: ${trip['dest_lat'].toStringAsFixed(5)}, ${trip['dest_lng'].toStringAsFixed(5)}",
+                     "Destino: ${destLat.toStringAsFixed(5)}, ${destLng.toStringAsFixed(5)}",
                      style: const TextStyle(fontSize: 14, color: Colors.black),
                      overflow: TextOverflow.ellipsis,
                    ),
@@ -141,5 +147,16 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
         ),
       ),
     );
+  }
+
+  double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+     if (value is Map && value.containsKey('Float64')) {
+         return _parseDouble(value['Float64']);
+    }
+    return 0.0;
   }
 }
