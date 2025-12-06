@@ -193,10 +193,19 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     decoration: InputDecoration(
                       labelText: '¿Dónde estás?',
                       labelStyle: const TextStyle(color: Colors.grey),
-                      prefixIcon: IconButton(
-                        icon: const Icon(Icons.my_location, color: Colors.blue),
-                        onPressed: () => taxiNotifier.useMyLocation(),
-                        tooltip: 'Usar mi ubicación',
+                      prefixIcon: Container(
+                        width: 120, // Give it some width
+                        padding: const EdgeInsets.only(right: 8), 
+                        child: TextButton.icon(
+                          onPressed: () => taxiNotifier.useMyLocation(),
+                          icon: const Icon(Icons.my_location, size: 18),
+                          label: const Text("Usa mi ubicación", style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Compact
+                          ),
+                        ),
                       ),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.close),
@@ -348,7 +357,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
               ),
             ),
             
-           if (taxiState.isLoading)
+           // Only show overlays loader if map is already active (avoid double loader during init)
+           if (taxiState.isLoading && taxiState.originLocation != null)
              const Center(child: CircularProgressIndicator()),
         ],
       ),
