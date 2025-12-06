@@ -17,6 +17,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   GoogleMapController? _mapController;
   final TextEditingController _originController = TextEditingController();
   final TextEditingController _destinationController = TextEditingController();
+  final FocusNode _originFocus = FocusNode();
+  final FocusNode _destFocus = FocusNode();
 
   static const CameraPosition _kDefaultLocation = CameraPosition(
     target: LatLng(17.9982, -94.5456), // Minatitlán, Veracruz default
@@ -36,6 +38,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   void dispose() {
     _originController.dispose();
     _destinationController.dispose();
+    _originFocus.dispose();
+    _destFocus.dispose();
     super.dispose();
   }
 
@@ -189,6 +193,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   // Origin Input
                   TextField(
                     controller: _originController,
+                    focusNode: _originFocus,
                     textInputAction: TextInputAction.search, // Show Search button
                     style: const TextStyle(color: Colors.black),
                     decoration: const InputDecoration(
@@ -241,6 +246,29 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
+                          // Continue Button
+                          Expanded(
+                             child: ElevatedButton.icon(
+                               onPressed: () {
+                                 taxiNotifier.setFocus(false); // Show destination
+                                 // Focus destination after build
+                                 Future.delayed(const Duration(milliseconds: 100), () {
+                                   if (context.mounted) {
+                                      FocusScope.of(context).requestFocus(_destFocus);
+                                   }
+                                 });
+                               }, 
+                               icon: const Icon(Icons.arrow_forward, size: 16),
+                               label: const Text("Continuar"),
+                               style: ElevatedButton.styleFrom(
+                                 backgroundColor: Colors.black, // Primary action
+                                 foregroundColor: Colors.white,
+                                 elevation: 0,
+                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                               ),
+                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -252,6 +280,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                         const Divider(),
                         TextField(
                           controller: _destinationController,
+                          focusNode: _destFocus,
                           textInputAction: TextInputAction.search, // Show Search button
                           style: const TextStyle(color: Colors.black),
                           decoration: const InputDecoration(
