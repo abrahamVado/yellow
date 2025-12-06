@@ -114,15 +114,28 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       body: Stack(
         children: [
           // Google Map Background
-          GoogleMap(
-            initialCameraPosition: _kDefaultLocation,
-            onMapCreated: (controller) => _mapController = controller,
-            markers: markers,
-            polylines: polylines,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-          ),
+          if (taxiState.originLocation == null)
+              const Center(child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   CircularProgressIndicator(),
+                   SizedBox(height: 16),
+                   Text("Obteniendo tu ubicación...", style: TextStyle(color: Colors.grey)),
+                ],
+              ))
+          else
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: taxiState.originLocation!,
+                zoom: 16.0,
+              ),
+              onMapCreated: (controller) => _mapController = controller,
+              markers: markers,
+              polylines: polylines,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+            ),
 
           // Inputs Panel (Top)
           Positioned(
