@@ -158,11 +158,13 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   }
 
   Future<void> searchLocation(String query) async {
+    print('Searching location for: $query'); // DEBUG LO
     if (query.isEmpty) return;
     
     state = state.copyWith(isLoading: true, predictions: []);
     // Use the geocoding API to find coordinates for the query
     final result = await _googleMapsService.getCoordinatesFromAddress(query);
+    print('Search result: $result'); // DEBUG LOG
     
     if (result != null) {
       final latLng = result['latLng'] as LatLng;
