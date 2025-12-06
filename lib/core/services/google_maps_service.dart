@@ -142,6 +142,8 @@ class GoogleMapsService {
 
       if (response.statusCode == 200) {
         final data = response.data;
+        print('Geocoding API Response: $data'); // DEBUG LOG
+        
         if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
           final result = data['results'][0];
           final location = result['geometry']['location'];
@@ -149,7 +151,11 @@ class GoogleMapsService {
              'latLng': LatLng(location['lat'], location['lng']),
              'address': result['formatted_address'],
           };
+        } else {
+             print('Geocoding failed. Status: ${data['status']}, Error: ${data['error_message']}');
         }
+      } else {
+        print('Geocoding HTTP Error: ${response.statusCode}');
       }
       return null;
     } catch (e) {
