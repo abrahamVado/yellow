@@ -130,8 +130,9 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   // Origin Selection Mode
                   if (!taxiState.isOriginInputVisible && taxiState.originAddress.isEmpty)
                    Column(
+                     crossAxisAlignment: CrossAxisAlignment.start, // Align label to left
                      children: [
-                       const Text("¿Dónde estás?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                       const Text("¿Dónde estás?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
                        const SizedBox(height: 10),
                        Row(
                          children: [
@@ -169,9 +170,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () {
-                           // Logic to reset origin or simple clear?
                            _originController.clear();
-                           taxiNotifier.showOriginInput(); // Ensure visible
+                           taxiNotifier.clearOrigin();
                         }, 
                       ),
                       border: InputBorder.none,

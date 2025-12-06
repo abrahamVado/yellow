@@ -85,7 +85,24 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     state = state.copyWith(isOriginInputVisible: true, isOriginFocused: true);
   }
 
+  void clearOrigin() {
+    state = state.copyWith(
+      originAddress: '',
+      // originLocation: null, // Optional: Keep marker or remove? Let's keep marker for now to avoid jarring UX, or remove if desired.
+      // If we remove marker, we should also clear route. for "Clear Input", usually just text clears.
+      // But if address is cleared, the sync logic won't overwrite controller.
+      predictions: [],
+      isOriginInputVisible: true,
+      isOriginFocused: true,
+    );
+  }
+
   void onQueryChanged(String query) async {
+    // If user is typing, clear the "confirmed" originAddress so it doesn't overwrite their typing in build()
+    if (state.originAddress.isNotEmpty && query != state.originAddress) {
+        state = state.copyWith(originAddress: '');
+    }
+
     if (query.isEmpty) {
       state = state.copyWith(predictions: []);
       return;
@@ -111,6 +128,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
             originAddress: description,
             originLocation: latLng,
             sessionToken: _uuid.v4(), // Regenerate token after selection
+            isOriginFocused: false, // Switch focus to destination
           );
         } else {
           state = state.copyWith(
