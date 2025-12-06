@@ -17,7 +17,7 @@ class TaxiRequestState {
   final String sessionToken;
   final Map<String, dynamic>? routeInfo;
   final bool isLoading;
-  final bool isOriginFocused; // Track which input is focused
+  final bool isOriginInputVisible;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -29,6 +29,7 @@ class TaxiRequestState {
     this.routeInfo,
     this.isLoading = false,
     this.isOriginFocused = true,
+    this.isOriginInputVisible = false,
   });
 
   TaxiRequestState copyWith({
@@ -41,6 +42,7 @@ class TaxiRequestState {
     Map<String, dynamic>? routeInfo,
     bool? isLoading,
     bool? isOriginFocused,
+    bool? isOriginInputVisible,
   }) {
     return TaxiRequestState(
       originAddress: originAddress ?? this.originAddress,
@@ -52,6 +54,7 @@ class TaxiRequestState {
       routeInfo: routeInfo ?? this.routeInfo,
       isLoading: isLoading ?? this.isLoading,
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
+      isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
     );
   }
 }
@@ -75,6 +78,10 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
 
   void setFocus(bool isOrigin) {
     state = state.copyWith(isOriginFocused: isOrigin, predictions: []);
+  }
+  
+  void showOriginInput() {
+    state = state.copyWith(isOriginInputVisible: true, isOriginFocused: true);
   }
 
   void onQueryChanged(String query) async {
@@ -124,6 +131,28 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
+  Future<void> updateOriginFromMarker(LatLng pos) async {
+      state = state.copyWith(isLoading: true);
+      final address = await _googleMapsService.getAddressFromCoordinates(pos);
+      state = state.copyWith(
+          originLocation: pos,
+          originAddress: address ?? '${pos.latitude}, ${pos.longitude}',
+          isLoading: false
+      );
+      if (state.destinationLocation != null) _calculateRoute();
+  }
+
+  Future<void> updateDestinationFromMarker(LatLng pos) async {
+      state = state.copyWith(isLoading: true);
+      final address = await _googleMapsService.getAddressFromCoordinates(pos);
+      state = state.copyWith(
+          destinationLocation: pos,
+          destinationAddress: address ?? '${pos.latitude}, ${pos.longitude}',
+          isLoading: false
+      );
+      if (state.originLocation != null) _calculateRoute();
+  }
+
   Future<void> _calculateRoute() async {
       if (state.originLocation == null || state.destinationLocation == null) return;
       
@@ -168,7 +197,11 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       state = state.copyWith(
         originLocation: latLng,
         originAddress: address ?? '${latLng.latitude}, ${latLng.longitude}',
-        isOriginFocused: false, // Move focus away or keep it, user preference
+        isOriginFocused: false, // Move focus away
+        isOriginInputVisible: false, // Reset to buttons view if using my location? Or show address? User said replace input with buttons... when use my location clicked, input to search should appear? No, "when usare otra ubicacion is clicked the input to search should appear". So "use my location" should probably just fill it and show map. 
+        // Let's keep isOriginInputVisible false if using my location, but show the "Where are you" is filled.
+        // Actually, user said: "replace the ¿Donde estas? input with two buttons... when usar otra ubicacion is clicked the input to search ¿donde estas? should appear"
+        // So if Use My Location is clicked, do we show input? Maybe just set origin and done.
         isLoading: false,
         sessionToken: _uuid.v4(),
       );
@@ -221,13 +254,6 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
        state = TaxiRequestState(
           sessionToken: _uuid.v4(),
           originLocation: const LatLng(17.9982, -94.5456), 
-          // Not setting address text to avoid overwriting user intent if they want to type, 
-          // but map will center here initially if we use originLocation for map camera.
-          // Wait, if originLocation is set, the map and markers will show it.
-          // The requirement says "by default the map should load in minatitlan", 
-          // usually this means Camera Position, not necessarily "Origin Selected".
-          // But if we want the map to start there, we can pass this to the GoogleMap widget.
-          // For now, let's just make sure reset clears things properly.
        );
   }
 }

@@ -33,7 +33,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
     final taxiState = ref.watch(taxiRequestProvider);
     final taxiNotifier = ref.read(taxiRequestProvider.notifier);
 
-    // Sync controllers with state if needed, or just use onChange
+    // Sync controllers with state
     if (_originController.text != taxiState.originAddress && taxiState.originAddress.isNotEmpty) {
       _originController.text = taxiState.originAddress;
     }
@@ -41,12 +41,25 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       _destinationController.text = taxiState.destinationAddress;
     }
 
+    // Draggable Markers
     Set<Marker> markers = {};
     if (taxiState.originLocation != null) {
-      markers.add(Marker(markerId: const MarkerId('origin'), position: taxiState.originLocation!, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)));
+      markers.add(Marker(
+        markerId: const MarkerId('origin'),
+        position: taxiState.originLocation!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Blue for Origin
+        draggable: true,
+        onDragEnd: (newPos) => taxiNotifier.updateOriginFromMarker(newPos),
+      ));
     }
     if (taxiState.destinationLocation != null) {
-      markers.add(Marker(markerId: const MarkerId('dest'), position: taxiState.destinationLocation!, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
+      markers.add(Marker(
+        markerId: const MarkerId('dest'),
+        position: taxiState.destinationLocation!,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen), // Green for Destination
+        draggable: true,
+        onDragEnd: (newPos) => taxiNotifier.updateDestinationFromMarker(newPos),
+      ));
     }
 
     Set<Polyline> polylines = {};
@@ -71,16 +84,6 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       }
     }
 
-    // Move camera to user location if recently updated via "Use My Location"
-    // We can check if state.originLocation changed or just listen to state changes.
-    // Ideally, the 'useMyLocation' in provider should trigger a side effect or we watch location here.
-    // For simplicity, if Origin is set and not focused, we can center it? 
-    // Or let the map's own 'myLocationEnabled' handle the blue dot, but we want to move the camera.
-    // The provider's useMyLocation updates originLocation. Let's react to that specific case if feasible,
-    // or just rely on the user seeing the blue dot. 
-    // BUT the requirement says "map should move to the location of the user".
-    // So let's add a listener in build or just use a ref listener.
-    
     ref.listen(taxiRequestProvider, (previous, next) {
         if (previous?.originLocation != next.originLocation && next.originLocation != null) {
              _mapController?.animateCamera(CameraUpdate.newLatLng(next.originLocation!));
@@ -124,39 +127,78 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
               ),
               child: Column(
                 children: [
+                  // Origin Selection Mode
+                  if (!taxiState.isOriginInputVisible && taxiState.originAddress.isEmpty)
+                   Column(
+                     children: [
+                       const Text("¿Dónde estás?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                       const SizedBox(height: 10),
+                       Row(
+                         children: [
+                           Expanded(
+                             child: ElevatedButton.icon(
+                               onPressed: () => taxiNotifier.useMyLocation(),
+                               icon: const Icon(Icons.my_location, color: Colors.white),
+                               label: const Text("Usa mi ubicación"),
+                               style: ElevatedButton.styleFrom(
+                                 backgroundColor: Colors.green,
+                                 foregroundColor: Colors.white,
+                               ),
+                             ),
+                           ),
+                           const SizedBox(width: 10),
+                           Expanded(
+                             child: OutlinedButton(
+                               onPressed: () => taxiNotifier.showOriginInput(),
+                               child: const Text("Usar otra"),
+                             ),
+                           ),
+                         ],
+                       )
+                     ],
+                   )
+                  else
                   // Origin Input
                   TextField(
                     controller: _originController,
-                    style: const TextStyle(color: Colors.black), // Requested Change
+                    style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       labelText: '¿Dónde estás?',
                       labelStyle: const TextStyle(color: Colors.grey),
-                      prefixIcon: const Icon(Icons.location_on, color: Colors.green),
+                      prefixIcon: const Icon(Icons.my_location, color: Colors.blue), // Blue as requested for origin marker logic
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.my_location, color: Colors.blue),
+                        icon: const Icon(Icons.close),
                         onPressed: () {
-                          taxiNotifier.useMyLocation();
-                        },
+                           // Logic to reset origin or simple clear?
+                           _originController.clear();
+                           taxiNotifier.showOriginInput(); // Ensure visible
+                        }, 
                       ),
                       border: InputBorder.none,
                     ),
                     onTap: () => taxiNotifier.setFocus(true),
                     onChanged: (val) => taxiNotifier.onQueryChanged(val),
                   ),
-                  const Divider(),
-                  // Destination Input
-                  TextField(
-                    controller: _destinationController,
-                    style: const TextStyle(color: Colors.black), // Requested Change
-                    decoration: const InputDecoration(
-                      labelText: '¿A dónde vas?',
-                      labelStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(Icons.location_on, color: Colors.red),
-                      border: InputBorder.none,
+                  
+                  // Destination Input (Hidden when Origin focused)
+                  if (!taxiState.isOriginFocused)
+                    Column(
+                      children: [
+                        const Divider(),
+                        TextField(
+                          controller: _destinationController,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: const InputDecoration(
+                            labelText: '¿A dónde vas?',
+                            labelStyle: TextStyle(color: Colors.grey),
+                            prefixIcon: Icon(Icons.location_on, color: Colors.green), // Green as requested for dest logic
+                            border: InputBorder.none,
+                          ),
+                          onTap: () => taxiNotifier.setFocus(false),
+                          onChanged: (val) => taxiNotifier.onQueryChanged(val),
+                        ),
+                      ],
                     ),
-                    onTap: () => taxiNotifier.setFocus(false),
-                    onChanged: (val) => taxiNotifier.onQueryChanged(val),
-                  ),
                 ],
               ),
             ),
@@ -165,7 +207,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
           // Autocomplete Suggestions Overlay
           if (taxiState.predictions.isNotEmpty)
             Positioned(
-              top: 230, // Just below the inputs card
+              top: taxiState.isOriginFocused ? 180 : 250, // Adjust position based on visibility
               left: 20,
               right: 20,
               child: Container(
