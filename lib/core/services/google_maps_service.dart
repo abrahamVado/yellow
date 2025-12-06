@@ -103,4 +103,28 @@ class GoogleMapsService {
       return null;
     }
   }
+  /// Reverse geocoding: Get address from LatLng
+  Future<String?> getAddressFromCoordinates(LatLng location) async {
+    try {
+      final response = await _dio.get(
+        'https://maps.googleapis.com/maps/api/geocode/json',
+        queryParameters: {
+          'latlng': '${location.latitude},${location.longitude}',
+          'key': _apiKey,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
+          return data['results'][0]['formatted_address'];
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching address: $e');
+      return null;
+    }
+  }
 }
+
