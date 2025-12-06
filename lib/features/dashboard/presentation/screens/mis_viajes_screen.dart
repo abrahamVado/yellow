@@ -95,7 +95,12 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
                  const SizedBox(width: 4),
                  // Note: Origin Alias not stored yet, just coords or geocoded address if available not provided by current API list
                  // Using coords for now or generic text
-                 Text("Origen: ${trip['origin_lat']}, ${trip['origin_lng']}", style: const TextStyle(fontSize: 14)),
+                   child: Text(
+                     "Origen: ${trip['origin_lat']}, ${trip['origin_lng']}",
+                     style: const TextStyle(fontSize: 14, color: Colors.black),
+                     overflow: TextOverflow.ellipsis,
+                   ),
+                 ),
               ],
             ),
             const SizedBox(height: 8),
@@ -105,7 +110,13 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
               children: [
                  const Icon(Icons.location_on, size: 16, color: Colors.green),
                  const SizedBox(width: 4),
-                 Text("Destino: ${trip['dest_lat']}, ${trip['dest_lng']}", style: const TextStyle(fontSize: 14)),
+                 Expanded(
+                   child: Text(
+                     "Destino: ${trip['dest_lat']}, ${trip['dest_lng']}",
+                     style: const TextStyle(fontSize: 14, color: Colors.black),
+                     overflow: TextOverflow.ellipsis,
+                   ),
+                 ),
               ],
             ),
              
@@ -113,7 +124,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text("\$$fare", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text("\$$fare", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
               ],
             ),
           ],
