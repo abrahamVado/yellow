@@ -373,6 +373,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   }
 
   Future<void> fetchMyTrips() async {
+    print('### STARTING FETCH MY TRIPS ###'); // DEBUG ENTRY
     state = state.copyWith(isLoading: true);
     try {
       final response = await _dio.get('/trips/mine');
