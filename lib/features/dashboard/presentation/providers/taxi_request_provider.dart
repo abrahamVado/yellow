@@ -158,9 +158,6 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
-import 'package:geocoding/geocoding.dart' as geo;
-
-// ... inside TaxiRequestNotifier
 
   Future<void> searchLocation(String query) async {
     print('Searching location for: $query'); 
