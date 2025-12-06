@@ -95,7 +95,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
                  const SizedBox(width: 4),
                  Expanded(
                    child: Text(
-                     "Origen: ${trip['origin_lat']}, ${trip['origin_lng']}",
+                     "Origen: ${trip['origin_lat'].toStringAsFixed(5)}, ${trip['origin_lng'].toStringAsFixed(5)}",
                      style: const TextStyle(fontSize: 14, color: Colors.black),
                      overflow: TextOverflow.ellipsis,
                    ),
@@ -111,7 +111,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
                  const SizedBox(width: 4),
                  Expanded(
                    child: Text(
-                     "Destino: ${trip['dest_lat']}, ${trip['dest_lng']}",
+                     "Destino: ${trip['dest_lat'].toStringAsFixed(5)}, ${trip['dest_lng'].toStringAsFixed(5)}",
                      style: const TextStyle(fontSize: 14, color: Colors.black),
                      overflow: TextOverflow.ellipsis,
                    ),
@@ -123,7 +123,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text("\$$fare", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+                Text("\$${fare.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
               ],
             ),
           ],
