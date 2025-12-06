@@ -138,6 +138,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
             ),
 
           // Inputs Panel (Top)
+          if (taxiState.originLocation != null)
           Positioned(
             top: 100,
             left: 20,
