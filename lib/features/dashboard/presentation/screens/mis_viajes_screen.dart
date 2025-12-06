@@ -60,8 +60,6 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
     // Format date if needed
     final createdAt = trip['created_at'] ?? '';
     final status = trip['status'] ?? 'pending';
-    final createdAt = trip['created_at'] ?? '';
-    final status = trip['status'] ?? 'pending';
     final fare = _parseDouble(trip['fare']);
     final originLat = _parseDouble(trip['origin_lat']);
     final originLng = _parseDouble(trip['origin_lng']);
