@@ -292,19 +292,20 @@ class _TripCardState extends ConsumerState<TripCard> {
      showDialog(
        context: context,
        builder: (ctx) => AlertDialog(
-         title: const Text("Cancelar Viaje"),
-         content: const Text("¿Estás seguro que deseas cancelar este viaje?"),
+         backgroundColor: Colors.white,
+         title: const Text("Cancelar Viaje", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+         content: const Text("¿Estás seguro que deseas cancelar este viaje?", style: TextStyle(color: Colors.black)),
          actions: [
            TextButton(
              onPressed: () => Navigator.pop(ctx),
-             child: const Text("No"),
+             child: const Text("No", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
            ),
            TextButton(
              onPressed: () {
                Navigator.pop(ctx);
                ref.read(taxiRequestProvider.notifier).cancelTrip(tripId);
              },
-             child: const Text("Sí, Cancelar", style: TextStyle(color: Colors.red)),
+             child: const Text("Sí, Cancelar", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
            ),
          ],
        ),

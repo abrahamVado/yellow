@@ -414,12 +414,13 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       }
   }
   
-  // Method to manually clear or reset if needed
+  // Method to manually clear or reset state
   void reset() {
-       // Minatitlán, Veracruz default location
        state = TaxiRequestState(
           sessionToken: _uuid.v4(),
-          originLocation: const LatLng(17.9982, -94.5456), 
+          // Don't set origin here, let UI or user trigger it.
+          // Or we can keep current origin? 
+          // User said "reset all inputs", so we clear everything.
        );
   }
 }

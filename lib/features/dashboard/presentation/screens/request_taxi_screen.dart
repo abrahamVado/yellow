@@ -405,6 +405,23 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                         child: const Text('Confirmar Viaje', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    // Cancel / Reset Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.refresh, color: Colors.red),
+                        label: const Text("Cancelar", style: TextStyle(color: Colors.red, fontSize: 16)),
+                        onPressed: () {
+                           taxiNotifier.reset();
+                           // Restart flow - fetch location again
+                           taxiNotifier.useMyLocation();
+                           // Clear text fields
+                           _originController.clear();
+                           _destinationController.clear();
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
