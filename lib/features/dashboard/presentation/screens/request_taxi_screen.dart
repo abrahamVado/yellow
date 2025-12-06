@@ -178,6 +178,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     ),
                     onTap: () => taxiNotifier.setFocus(true),
                     onChanged: (val) => taxiNotifier.onQueryChanged(val),
+                    onSubmitted: (val) => taxiNotifier.searchLocation(val),
                   ),
                   
                   // Destination Input (Hidden when Origin focused)
@@ -196,6 +197,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           ),
                           onTap: () => taxiNotifier.setFocus(false),
                           onChanged: (val) => taxiNotifier.onQueryChanged(val),
+                          onSubmitted: (val) => taxiNotifier.searchLocation(val),
                         ),
                       ],
                     ),

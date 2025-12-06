@@ -25,7 +25,7 @@ class GoogleMapsService {
           'input': query,
           'key': _apiKey,
           'sessiontoken': sessionToken,
-          // 'components': 'country:us', // Optional: restrict to country
+          'components': 'country:mx', // Restrict to Mexico
         },
       );
 
@@ -103,6 +103,7 @@ class GoogleMapsService {
       return null;
     }
   }
+
   /// Reverse geocoding: Get address from LatLng
   Future<String?> getAddressFromCoordinates(LatLng location) async {
     try {
@@ -123,6 +124,36 @@ class GoogleMapsService {
       return null;
     } catch (e) {
       print('Error fetching address: $e');
+      return null;
+    }
+  }
+
+  /// Forward geocoding: Get LatLng from Address query
+  Future<Map<String, dynamic>?> getCoordinatesFromAddress(String address) async {
+    try {
+      final response = await _dio.get(
+        'https://maps.googleapis.com/maps/api/geocode/json',
+        queryParameters: {
+          'address': address,
+          'key': _apiKey,
+          'components': 'country:mx', // Bias to Mexico
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
+          final result = data['results'][0];
+          final location = result['geometry']['location'];
+          return {
+             'latLng': LatLng(location['lat'], location['lng']),
+             'address': result['formatted_address'],
+          };
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching coordinates from address: $e');
       return null;
     }
   }

@@ -157,6 +157,39 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
+  Future<void> searchLocation(String query) async {
+    if (query.isEmpty) return;
+    
+    state = state.copyWith(isLoading: true, predictions: []);
+    // Use the geocoding API to find coordinates for the query
+    final result = await _googleMapsService.getCoordinatesFromAddress(query);
+    
+    if (result != null) {
+      final latLng = result['latLng'] as LatLng;
+      final formattedAddress = result['address'] as String;
+      
+      if (state.isOriginFocused) {
+          state = state.copyWith(
+            originAddress: formattedAddress,
+            originLocation: latLng,
+            sessionToken: _uuid.v4(),
+            isOriginFocused: false, // Move focus to dest
+          );
+      } else {
+          state = state.copyWith(
+            destinationAddress: formattedAddress,
+            destinationLocation: latLng,
+            sessionToken: _uuid.v4(),
+          );
+      }
+      
+      if (state.originLocation != null && state.destinationLocation != null) {
+        _calculateRoute();
+      }
+    }
+    state = state.copyWith(isLoading: false);
+  }
+
   Future<void> updateOriginFromMarker(LatLng pos) async {
       state = state.copyWith(isLoading: true);
       final address = await _googleMapsService.getAddressFromCoordinates(pos);
