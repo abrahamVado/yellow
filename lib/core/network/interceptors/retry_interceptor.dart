@@ -35,7 +35,7 @@ class RetryInterceptor extends Interceptor {
             final newAccessToken = response.data['access_token'];
             final newRefreshToken = response.data['refresh_token'];
 
-            print('RetryInterceptor: Saving new tokens...');
+            print('RetryInterceptor: Saving new tokens... (${newAccessToken.substring(0, 10)}...)');
             await tokenStorage.saveTokens(
               accessToken: newAccessToken,
               refreshToken: newRefreshToken,

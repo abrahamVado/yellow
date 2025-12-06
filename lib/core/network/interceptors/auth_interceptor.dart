@@ -15,7 +15,7 @@ class AuthInterceptor extends Interceptor {
     final token = await tokenStorage.readAccessToken();
     print('AuthInterceptor: Checking token for ${options.path}');
     if (token != null && token.isNotEmpty) {
-      print('AuthInterceptor: Token found (length: ${token.length})');
+      print('AuthInterceptor: Token found (${token.substring(0, 10)}...) length: ${token.length}');
       options.headers['Authorization'] = 'Bearer $token';
     } else {
       print('AuthInterceptor: No token found!');
