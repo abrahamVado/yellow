@@ -37,21 +37,40 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () => ref.read(taxiRequestProvider.notifier).fetchMyTrips(),
-              child: myTrips.isEmpty
-                ? Stack(
-                    children: [
-                      ListView(), // Needed for RefreshIndicator to work on empty list
-                      const Center(child: Text("No tienes viajes recientes")),
-                    ],
-                  )
-                : ListView.builder( 
-                    padding: const EdgeInsets.all(16),
-                    itemCount: myTrips.length,
-                    itemBuilder: (context, index) {
-                      final trip = myTrips[index];
-                      return _buildTripCard(trip);
-                    },
-                  ),
+              child: Stack(
+                children: [
+                   if (taxiState.errorMessage != null)
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          width: double.infinity,
+                          color: Colors.redAccent,
+                          child: Text(
+                            taxiState.errorMessage!,
+                            style: const TextStyle(color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                   
+                   myTrips.isEmpty
+                    ? ListView(
+                        children: const [
+                          SizedBox(height: 100),
+                           Center(child: Text("No tienes viajes recientes")),
+                        ],
+                      )
+                    : ListView.builder( 
+                        padding: const EdgeInsets.only(top: taxiState.errorMessage != null ? 40 : 16, left: 16, right: 16, bottom: 16),
+                        itemCount: myTrips.length,
+                        itemBuilder: (context, index) {
+                          final trip = myTrips[index];
+                          return _buildTripCard(trip);
+                        },
+                      ),
+                ],
+              ),
             ),
     );
   }

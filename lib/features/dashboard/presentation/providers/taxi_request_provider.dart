@@ -23,6 +23,7 @@ class TaxiRequestState {
   final bool isOriginFocused;
   final double estimatedFare;
   final List<dynamic> myTrips;
+  final String? errorMessage;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -37,6 +38,7 @@ class TaxiRequestState {
     this.isOriginInputVisible = false,
     this.estimatedFare = 0.0,
     this.myTrips = const [],
+    this.errorMessage,
   });
 
   TaxiRequestState copyWith({
@@ -52,6 +54,7 @@ class TaxiRequestState {
     bool? isOriginInputVisible,
     double? estimatedFare,
     List<dynamic>? myTrips,
+    String? errorMessage,
   }) {
     return TaxiRequestState(
       originAddress: originAddress ?? this.originAddress,
@@ -66,6 +69,7 @@ class TaxiRequestState {
       isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
       estimatedFare: estimatedFare ?? this.estimatedFare,
       myTrips: myTrips ?? this.myTrips,
+      errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
     );
   }
 }
@@ -374,7 +378,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
 
   Future<void> fetchMyTrips() async {
     print('### STARTING FETCH MY TRIPS ###'); // DEBUG ENTRY
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, errorMessage: null); // Clear previous error
     try {
       final response = await _dio.get('/trips/mine');
       print('FetchTrips Response: ${response.statusCode} - ${response.data}'); // DEBUG
@@ -388,7 +392,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       }
     } catch (e) {
       print('Error fetching trips: $e');
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, errorMessage: 'Error: $e');
     }
   }
   

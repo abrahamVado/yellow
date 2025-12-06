@@ -9,7 +9,7 @@ import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/auth/presentation/screens/verify_code_screen.dart';
 import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/dashboard/presentation/screens/request_taxi_screen.dart';
-import '../features/dashboard/presentation/screens/my_trips_screen.dart';
+import '../features/dashboard/presentation/screens/mis_viajes_screen.dart';
 import '../features/dashboard/presentation/screens/account_statement_screen.dart';
 
 
@@ -76,7 +76,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'my-trips',
             pageBuilder: (context, state) => CustomTransitionPage(
               key: state.pageKey,
-              child: const MyTripsScreen(),
+              child: const MisViajesScreen(),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 const begin = Offset(-1.0, 0.0); // Slide from Left
                 const end = Offset.zero;
