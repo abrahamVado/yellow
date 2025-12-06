@@ -5,8 +5,8 @@ import 'package:geocoding/geocoding.dart' as geo;
 import 'package:uuid/uuid.dart';
 import 'package:yellow/core/config/app_config.dart';
 import 'package:yellow/core/services/google_maps_service.dart';
-import 'package:dio/dio.dart';
 import 'package:yellow/core/network/dio_client.dart';
+import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
 
 // State class for Taxi Request
 class TaxiRequestState {
@@ -69,14 +69,27 @@ final googleMapsServiceProvider = Provider<GoogleMapsService>((ref) {
 
 
 
-// StateNotifier for Taxi Request logic
+import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
+
+// ...
+
 class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   final GoogleMapsService _googleMapsService;
   final Dio _dio;
+  final FlutterGooglePlacesSdk _places;
   final Uuid _uuid = const Uuid();
 
-  TaxiRequestNotifier(this._googleMapsService, this._dio)
+  TaxiRequestNotifier(this._googleMapsService, this._dio, this._places)
       : super(TaxiRequestState(sessionToken: const Uuid().v4()));
+
+// ...
+
+final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiRequestState>((ref) {
+  final botService = ref.watch(googleMapsServiceProvider);
+  final dio = ref.watch(dioProvider);
+  final places = ref.watch(flutterGooglePlacesSdkProvider);
+  return TaxiRequestNotifier(botService, dio, places);
+});
 
   void setFocus(bool isOrigin) {
     state = state.copyWith(isOriginFocused: isOrigin, predictions: []);
@@ -98,9 +111,21 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     );
   }
 
+final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
+  final appConfig = ref.watch(appConfigProvider);
+  return FlutterGooglePlacesSdk(appConfig.env.googleMapsApiKey); 
+});
+
+// ... StateNotifier
+  final FlutterGooglePlacesSdk _places;
+  // ... constructor
+  TaxiRequestNotifier(this._googleMapsService, this._dio, this._places)
+      : super(TaxiRequestState(sessionToken: const Uuid().v4()));
+
+  // ... 
+
   void onQueryChanged(String query) async {
-    // If user is typing, clear the "confirmed" address of the FOCUSED input
-    // so it doesn't overwrite their typing in build()
+    // Focus logic...
     if (state.isOriginFocused) {
        if (state.originAddress.isNotEmpty && query != state.originAddress) {
           state = state.copyWith(originAddress: '');
@@ -116,43 +141,70 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       return;
     }
     
-    // Simple debounce could be added here in UI or via RxDart, keeping it simple for now
-    final predictions = await _googleMapsService.getPlacePredictions(query, state.sessionToken);
-    state = state.copyWith(predictions: predictions);
+    try {
+      final response = await _places.findAutocompletePredictions(
+        query,
+        countries: ['mx'], // Restrict to Mexico using SDK
+        newSessionToken: false, // Managed manually or by SDK? SDK manages it if null, but we passed false. 
+        // Actually, let's keep it simple. SDK handles tokens well.
+      );
+      
+      final preds = response.predictions.map((p) => {
+        'place_id': p.placeId,
+        'description': p.fullText, // or primaryText + secondaryText
+        'primary_text': p.primaryText,
+        'secondary_text': p.secondaryText,
+      }).toList();
+      
+      print("SDK Autocomplete results: ${preds.length}");
+      state = state.copyWith(predictions: preds);
+      
+    } catch (e) {
+      print("SDK Autocomplete Error: $e");
+    }
   }
 
   Future<void> onPredictionSelected(String placeId, String description) async {
     state = state.copyWith(isLoading: true, predictions: []);
 
     try {
-      final details = await _googleMapsService.getPlaceDetails(placeId, state.sessionToken);
+      // Use SDK to fetch details (bypasses API/Dio restrictions)
+      final response = await _places.fetchPlace(
+        placeId,
+        fields: [PlaceField.Location, PlaceField.Address, PlaceField.Name],
+      );
       
-      if (details != null) {
-        final location = details['geometry']['location'];
-        final latLng = LatLng(location['lat'], location['lng']);
+      final place = response.place;
+      
+      if (place != null && place.latLng != null) {
+        final latLng = LatLng(place.latLng!.lat, place.latLng!.lng);
+        // Use the description from the list, or place.address, or place.name
+        // Description from list is usually best formatted.
+        // But put place.name if available? 
+        // Let's stick to description passed in, or place.address if formatted.
+        final address = place.address ?? description;
 
         if (state.isOriginFocused) {
           state = state.copyWith(
-            originAddress: description,
+            originAddress: address,
             originLocation: latLng,
-            sessionToken: _uuid.v4(), // Regenerate token after selection
-            isOriginFocused: false, // Switch focus to destination
+            sessionToken: _uuid.v4(), 
+            isOriginFocused: false, 
           );
         } else {
           state = state.copyWith(
-            destinationAddress: description,
+            destinationAddress: address,
             destinationLocation: latLng,
-            sessionToken: _uuid.v4(), // Regenerate token after selection
+            sessionToken: _uuid.v4(), 
           );
         }
         
-        // Calculate Route if both points are set
         if (state.originLocation != null && state.destinationLocation != null) {
             _calculateRoute();
         }
       }
     } catch (e) {
-      print('Error selecting place: $e');
+      print('SDK Fetch Place Error: $e');
     } finally {
       state = state.copyWith(isLoading: false);
     }
@@ -339,8 +391,14 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   }
 }
 
+final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
+  final appConfig = ref.watch(appConfigProvider);
+  return FlutterGooglePlacesSdk(appConfig.env.googleMapsApiKey); 
+});
+
 final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiRequestState>((ref) {
   final botService = ref.watch(googleMapsServiceProvider);
   final dio = ref.watch(dioProvider);
-  return TaxiRequestNotifier(botService, dio);
+  final places = ref.watch(flutterGooglePlacesSdkProvider);
+  return TaxiRequestNotifier(botService, dio, places);
 });
