@@ -162,11 +162,12 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   // Origin Input
                   TextField(
                     controller: _originController,
+                    textInputAction: TextInputAction.search, // Show Search button
                     style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       labelText: '¿Dónde estás?',
                       labelStyle: const TextStyle(color: Colors.grey),
-                      prefixIcon: const Icon(Icons.my_location, color: Colors.blue), // Blue as requested for origin marker logic
+                      prefixIcon: const Icon(Icons.my_location, color: Colors.blue),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () {
@@ -188,11 +189,12 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                         const Divider(),
                         TextField(
                           controller: _destinationController,
+                          textInputAction: TextInputAction.search, // Show Search button
                           style: const TextStyle(color: Colors.black),
                           decoration: const InputDecoration(
                             labelText: '¿A dónde vas?',
                             labelStyle: TextStyle(color: Colors.grey),
-                            prefixIcon: Icon(Icons.location_on, color: Colors.green), // Green as requested for dest logic
+                            prefixIcon: Icon(Icons.location_on, color: Colors.green),
                             border: InputBorder.none,
                           ),
                           onTap: () => taxiNotifier.setFocus(false),
