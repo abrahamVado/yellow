@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart' as geo;
 import 'package:uuid/uuid.dart';
 import 'package:yellow/core/config/app_config.dart';
 import 'package:yellow/core/services/google_maps_service.dart';
@@ -157,39 +158,61 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
+import 'package:geocoding/geocoding.dart' as geo;
+
+// ... inside TaxiRequestNotifier
+
   Future<void> searchLocation(String query) async {
-    print('Searching location for: $query'); // DEBUG LO
+    print('Searching location for: $query'); 
     if (query.isEmpty) return;
     
     state = state.copyWith(isLoading: true, predictions: []);
-    // Use the geocoding API to find coordinates for the query
-    final result = await _googleMapsService.getCoordinatesFromAddress(query);
-    print('Search result: $result'); // DEBUG LOG
     
-    if (result != null) {
-      final latLng = result['latLng'] as LatLng;
-      final formattedAddress = result['address'] as String;
+    try {
+      // Use native geocoding package
+      List<geo.Location> locations = await geo.locationFromAddress(query);
       
-      if (state.isOriginFocused) {
-          state = state.copyWith(
-            originAddress: formattedAddress,
-            originLocation: latLng,
-            sessionToken: _uuid.v4(),
-            isOriginFocused: false, // Move focus to dest
-          );
-      } else {
-          state = state.copyWith(
-            destinationAddress: formattedAddress,
-            destinationLocation: latLng,
-            sessionToken: _uuid.v4(),
-          );
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        final latLng = LatLng(loc.latitude, loc.longitude);
+        print('Native Search result: $latLng');
+        
+        // Optional: formatting address might be less pretty with native geocoder, 
+        // we can use placemarkFromCoordinates to get a better name if needed, 
+        // or just use the query (capitalized) for now.
+        // Let's try to get a better name.
+        List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(loc.latitude, loc.longitude);
+        String formattedAddress = query;
+        if (placemarks.isNotEmpty) {
+            final p = placemarks.first;
+            formattedAddress = '${p.street}, ${p.locality}, ${p.country}'; // Improved formatting
+        }
+
+        if (state.isOriginFocused) {
+            state = state.copyWith(
+              originAddress: formattedAddress,
+              originLocation: latLng,
+              sessionToken: _uuid.v4(),
+              isOriginFocused: false, // Move focus to dest
+            );
+        } else {
+            state = state.copyWith(
+              destinationAddress: formattedAddress,
+              destinationLocation: latLng,
+              sessionToken: _uuid.v4(),
+            );
+        }
+        
+        if (state.originLocation != null && state.destinationLocation != null) {
+          _calculateRoute();
+        }
       }
-      
-      if (state.originLocation != null && state.destinationLocation != null) {
-        _calculateRoute();
-      }
+    } catch (e) {
+      print('Native Geocoding Error: $e');
+      // Fallback or show error?
+    } finally {
+      state = state.copyWith(isLoading: false);
     }
-    state = state.copyWith(isLoading: false);
   }
 
   Future<void> updateOriginFromMarker(LatLng pos) async {

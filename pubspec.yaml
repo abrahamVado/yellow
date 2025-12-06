@@ -45,6 +45,7 @@ dependencies:
   lucide_icons: ^0.257.0
   google_maps_flutter: ^2.5.0
   geolocator: ^10.1.0
+  geocoding: ^3.0.0 # Added for native geocoding
   image_picker: ^1.0.4
   record: ^6.0.0
   audioplayers: ^5.1.0
