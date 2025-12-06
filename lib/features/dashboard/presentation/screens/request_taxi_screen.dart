@@ -24,6 +24,15 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-fetch location on entry
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(taxiRequestProvider.notifier).useMyLocation();
+    });
+  }
+
+  @override
   void dispose() {
     _originController.dispose();
     _destinationController.dispose();
@@ -171,7 +180,11 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     decoration: InputDecoration(
                       labelText: '¿Dónde estás?',
                       labelStyle: const TextStyle(color: Colors.grey),
-                      prefixIcon: const Icon(Icons.my_location, color: Colors.blue),
+                      prefixIcon: IconButton(
+                        icon: const Icon(Icons.my_location, color: Colors.blue),
+                        onPressed: () => taxiNotifier.useMyLocation(),
+                        tooltip: 'Usar mi ubicación',
+                      ),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.close),
                         onPressed: () {

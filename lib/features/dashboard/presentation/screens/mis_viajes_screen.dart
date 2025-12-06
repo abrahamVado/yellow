@@ -22,7 +22,8 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final myTrips = ref.watch(taxiRequestProvider).myTrips;
+    final taxiState = ref.watch(taxiRequestProvider);
+    final myTrips = taxiState.myTrips;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -32,15 +33,25 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: myTrips.isEmpty
-          ? const Center(child: Text("No tienes viajes recientes"))
-          : ListView.builder( // Reverse list handled in SQL (DESC)
-              padding: const EdgeInsets.all(16),
-              itemCount: myTrips.length,
-              itemBuilder: (context, index) {
-                final trip = myTrips[index];
-                return _buildTripCard(trip);
-              },
+      body: taxiState.isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: () => ref.read(taxiRequestProvider.notifier).fetchMyTrips(),
+              child: myTrips.isEmpty
+                ? Stack(
+                    children: [
+                      ListView(), // Needed for RefreshIndicator to work on empty list
+                      const Center(child: Text("No tienes viajes recientes")),
+                    ],
+                  )
+                : ListView.builder( 
+                    padding: const EdgeInsets.all(16),
+                    itemCount: myTrips.length,
+                    itemBuilder: (context, index) {
+                      final trip = myTrips[index];
+                      return _buildTripCard(trip);
+                    },
+                  ),
             ),
     );
   }
