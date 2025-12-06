@@ -98,9 +98,16 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   }
 
   void onQueryChanged(String query) async {
-    // If user is typing, clear the "confirmed" originAddress so it doesn't overwrite their typing in build()
-    if (state.originAddress.isNotEmpty && query != state.originAddress) {
-        state = state.copyWith(originAddress: '');
+    // If user is typing, clear the "confirmed" address of the FOCUSED input
+    // so it doesn't overwrite their typing in build()
+    if (state.isOriginFocused) {
+       if (state.originAddress.isNotEmpty && query != state.originAddress) {
+          state = state.copyWith(originAddress: '');
+       }
+    } else {
+       if (state.destinationAddress.isNotEmpty && query != state.destinationAddress) {
+          state = state.copyWith(destinationAddress: '');
+       }
     }
 
     if (query.isEmpty) {
