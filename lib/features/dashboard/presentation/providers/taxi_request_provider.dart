@@ -367,7 +367,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'fare': state.estimatedFare, 
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
-        'scheduled_at': state.scheduledTime?.toIso8601String(),
+        'scheduled_at': state.scheduledTime?.toUtc().toIso8601String(),
       };
       
       print('Creating Trip with Payload: $data'); // DEBUG LOG
