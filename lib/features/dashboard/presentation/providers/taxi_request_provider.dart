@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:uuid/uuid.dart';
 import 'package:yellow/core/config/app_config.dart';
 import 'package:yellow/core/services/google_maps_service.dart';
@@ -137,6 +138,52 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       state = state.copyWith(routeInfo: routeInfo, isLoading: false);
   }
 
+  Future<void> useMyLocation() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      // Check permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+            // Permissions are denied
+            state = state.copyWith(isLoading: false);
+            return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are denied forever
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition();
+      final latLng = LatLng(position.latitude, position.longitude);
+
+      // Reverse Geocode
+      final address = await _googleMapsService.getAddressFromCoordinates(latLng);
+
+      state = state.copyWith(
+        originLocation: latLng,
+        originAddress: address ?? '${latLng.latitude}, ${latLng.longitude}',
+        isOriginFocused: false, // Move focus away or keep it, user preference
+        isLoading: false,
+        sessionToken: _uuid.v4(),
+      );
+      
+      // Calculate route if destination is already set
+      if (state.destinationLocation != null) {
+          _calculateRoute();
+      }
+
+    } catch (e) {
+      print('Error getting location: $e');
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
   Future<bool> createTrip() async {
     if (state.originLocation == null) return false;
 
@@ -151,13 +198,6 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
       };
-
-      // Assuming the endpoint is mounted at /auth/trips or /trips depending on router.
-      // Based on flutter.go, it was mounted at /trips inside registerFlutterRoutes.
-      // Flutter routes are usually /api/something if checking web.go but let's assume /trips matches the group.
-      // Wait, web.go mounts registerFlutterRoutes at root router. 
-      // And auth routes are /auth.
-      // So trips routes are /trips.
       
       final response = await _dio.post('/trips', data: data);
       
@@ -176,7 +216,19 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   
   // Method to manually clear or reset if needed
   void reset() {
-       state = TaxiRequestState(sessionToken: _uuid.v4());
+       // Minatitlán, Veracruz default location
+       // 17.9982, -94.5456
+       state = TaxiRequestState(
+          sessionToken: _uuid.v4(),
+          originLocation: const LatLng(17.9982, -94.5456), 
+          // Not setting address text to avoid overwriting user intent if they want to type, 
+          // but map will center here initially if we use originLocation for map camera.
+          // Wait, if originLocation is set, the map and markers will show it.
+          // The requirement says "by default the map should load in minatitlan", 
+          // usually this means Camera Position, not necessarily "Origin Selected".
+          // But if we want the map to start there, we can pass this to the GoogleMap widget.
+          // For now, let's just make sure reset clears things properly.
+       );
   }
 }
 

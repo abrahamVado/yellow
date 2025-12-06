@@ -17,8 +17,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   final TextEditingController _destinationController = TextEditingController();
 
   static const CameraPosition _kDefaultLocation = CameraPosition(
-    target: LatLng(19.4326, -99.1332), // CDMX default
-    zoom: 14.4746,
+    target: LatLng(17.9982, -94.5456), // Minatitlán, Veracruz default
+    zoom: 16.0,
   );
 
   @override
@@ -71,6 +71,23 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       }
     }
 
+    // Move camera to user location if recently updated via "Use My Location"
+    // We can check if state.originLocation changed or just listen to state changes.
+    // Ideally, the 'useMyLocation' in provider should trigger a side effect or we watch location here.
+    // For simplicity, if Origin is set and not focused, we can center it? 
+    // Or let the map's own 'myLocationEnabled' handle the blue dot, but we want to move the camera.
+    // The provider's useMyLocation updates originLocation. Let's react to that specific case if feasible,
+    // or just rely on the user seeing the blue dot. 
+    // BUT the requirement says "map should move to the location of the user".
+    // So let's add a listener in build or just use a ref listener.
+    
+    ref.listen(taxiRequestProvider, (previous, next) {
+        if (previous?.originLocation != next.originLocation && next.originLocation != null) {
+             _mapController?.animateCamera(CameraUpdate.newLatLng(next.originLocation!));
+        }
+    });
+
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -110,9 +127,17 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   // Origin Input
                   TextField(
                     controller: _originController,
-                    decoration: const InputDecoration(
+                    style: const TextStyle(color: Colors.black), // Requested Change
+                    decoration: InputDecoration(
                       labelText: '¿Dónde estás?',
-                      prefixIcon: Icon(Icons.my_location, color: Colors.green),
+                      labelStyle: const TextStyle(color: Colors.grey),
+                      prefixIcon: const Icon(Icons.location_on, color: Colors.green),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.my_location, color: Colors.blue),
+                        onPressed: () {
+                          taxiNotifier.useMyLocation();
+                        },
+                      ),
                       border: InputBorder.none,
                     ),
                     onTap: () => taxiNotifier.setFocus(true),
@@ -122,8 +147,10 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   // Destination Input
                   TextField(
                     controller: _destinationController,
+                    style: const TextStyle(color: Colors.black), // Requested Change
                     decoration: const InputDecoration(
                       labelText: '¿A dónde vas?',
+                      labelStyle: TextStyle(color: Colors.grey),
                       prefixIcon: Icon(Icons.location_on, color: Colors.red),
                       border: InputBorder.none,
                     ),
