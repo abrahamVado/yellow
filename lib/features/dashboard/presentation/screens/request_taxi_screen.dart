@@ -68,7 +68,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       polylines.add(Polyline(
         polylineId: const PolylineId('route'),
         points: points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
-        color: Colors.blue,
+        color: Colors.black,
         width: 5,
       ));
       
