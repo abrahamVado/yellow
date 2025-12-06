@@ -2,11 +2,14 @@ class Env {
   final String baseUrl;
   final String appEnv;
 
+  final String googleMapsApiKey;
+
   static const String apiUrl = 'https://api.softwaremia.com';
 
   Env({
     required this.baseUrl,
     required this.appEnv,
+    required this.googleMapsApiKey,
   });
 
   static Future<Env> load() async {
@@ -18,10 +21,15 @@ class Env {
       'APP_ENV',
       defaultValue: 'dev',
     );
+    const googleMapsApiKey = String.fromEnvironment(
+      'GOOGLE_MAPS_API_KEY',
+      defaultValue: '', // User must provide this
+    );
 
     return Env(
       baseUrl: baseUrl,
       appEnv: appEnv,
+      googleMapsApiKey: googleMapsApiKey,
     );
   }
 }
