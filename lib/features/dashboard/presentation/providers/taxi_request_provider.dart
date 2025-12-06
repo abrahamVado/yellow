@@ -51,16 +51,6 @@ class TaxiRequestState {
     bool? isOriginFocused,
     bool? isOriginInputVisible,
     double? estimatedFare,
-  }) {
-    return TaxiRequestState(
-      originAddress: originAddress ?? this.originAddress,
-      originLocation: originLocation ?? this.originLocation,
-      destinationAddress: destinationAddress ?? this.destinationAddress,
-      destinationLocation: destinationLocation ?? this.destinationLocation,
-      predictions: predictions ?? this.predictions,
-      sessionToken: sessionToken ?? this.sessionToken,
-      routeInfo: routeInfo ?? this.routeInfo,
-    double? estimatedFare,
     List<dynamic>? myTrips,
   }) {
     return TaxiRequestState(
