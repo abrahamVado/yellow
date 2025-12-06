@@ -23,7 +23,7 @@ class Env {
     );
     const googleMapsApiKey = String.fromEnvironment(
       'GOOGLE_MAPS_API_KEY',
-      defaultValue: '', // User must provide this
+      defaultValue: '000000000000000000',
     );
 
     return Env(
