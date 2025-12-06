@@ -211,9 +211,13 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () {
-                          // TODO: Proceed to booking
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Procesando solicitud...')));
+                        onPressed: () async {
+                          final success = await taxiNotifier.createTrip();
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Viaje solicitado con éxito!')));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
+                          }
                         },
                         child: const Text('Confirmar Viaje', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                       ),

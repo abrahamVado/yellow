@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:yellow/core/config/app_config.dart';
 import 'package:yellow/core/services/google_maps_service.dart';
 import 'package:dio/dio.dart';
+import 'package:yellow/core/network/dio_client.dart';
 
 // State class for Taxi Request
 class TaxiRequestState {
@@ -60,12 +61,15 @@ final googleMapsServiceProvider = Provider<GoogleMapsService>((ref) {
   return GoogleMapsService(Dio(), appConfig.env.googleMapsApiKey);
 });
 
+
+
 // StateNotifier for Taxi Request logic
 class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   final GoogleMapsService _googleMapsService;
+  final Dio _dio;
   final Uuid _uuid = const Uuid();
 
-  TaxiRequestNotifier(this._googleMapsService)
+  TaxiRequestNotifier(this._googleMapsService, this._dio)
       : super(TaxiRequestState(sessionToken: const Uuid().v4()));
 
   void setFocus(bool isOrigin) {
@@ -132,6 +136,43 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       final routeInfo = await _googleMapsService.getRouteCoordinates(routeStart, routeEnd);
       state = state.copyWith(routeInfo: routeInfo, isLoading: false);
   }
+
+  Future<bool> createTrip() async {
+    if (state.originLocation == null) return false;
+
+    state = state.copyWith(isLoading: true);
+    try {
+      final data = {
+        'origin_lat': state.originLocation!.latitude,
+        'origin_lng': state.originLocation!.longitude,
+        'dest_lat': state.destinationLocation?.latitude,
+        'dest_lng': state.destinationLocation?.longitude,
+        'fare': 0.0, // Placeholder
+        'distance_meters': state.routeInfo?['distance_value'],
+        'duration_seconds': state.routeInfo?['duration_value'],
+      };
+
+      // Assuming the endpoint is mounted at /auth/trips or /trips depending on router.
+      // Based on flutter.go, it was mounted at /trips inside registerFlutterRoutes.
+      // Flutter routes are usually /api/something if checking web.go but let's assume /trips matches the group.
+      // Wait, web.go mounts registerFlutterRoutes at root router. 
+      // And auth routes are /auth.
+      // So trips routes are /trips.
+      
+      final response = await _dio.post('/trips', data: data);
+      
+      if (response.statusCode == 201) {
+          // Success
+          return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error creating trip: $e');
+      return false;
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
   
   // Method to manually clear or reset if needed
   void reset() {
@@ -140,6 +181,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
 }
 
 final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiRequestState>((ref) {
-  final service = ref.watch(googleMapsServiceProvider);
-  return TaxiRequestNotifier(service);
+  final botService = ref.watch(googleMapsServiceProvider);
+  final dio = ref.watch(dioProvider);
+  return TaxiRequestNotifier(botService, dio);
 });
