@@ -2,11 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart' as geo;
+import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart' as places_sdk;
 import 'package:uuid/uuid.dart';
 import 'package:yellow/core/config/app_config.dart';
 import 'package:yellow/core/services/google_maps_service.dart';
+import 'package:dio/dio.dart';
 import 'package:yellow/core/network/dio_client.dart';
-import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
 
 // State class for Taxi Request
 class TaxiRequestState {
@@ -67,29 +68,21 @@ final googleMapsServiceProvider = Provider<GoogleMapsService>((ref) {
   return GoogleMapsService(Dio(), appConfig.env.googleMapsApiKey);
 });
 
+final flutterGooglePlacesSdkProvider = Provider<places_sdk.FlutterGooglePlacesSdk>((ref) {
+  final appConfig = ref.watch(appConfigProvider);
+  return places_sdk.FlutterGooglePlacesSdk(appConfig.env.googleMapsApiKey); 
+});
 
 
-import 'package:flutter_google_places_sdk/flutter_google_places_sdk.dart';
-
-// ...
-
+// StateNotifier for Taxi Request logic
 class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   final GoogleMapsService _googleMapsService;
   final Dio _dio;
-  final FlutterGooglePlacesSdk _places;
+  final places_sdk.FlutterGooglePlacesSdk _places;
   final Uuid _uuid = const Uuid();
 
   TaxiRequestNotifier(this._googleMapsService, this._dio, this._places)
       : super(TaxiRequestState(sessionToken: const Uuid().v4()));
-
-// ...
-
-final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiRequestState>((ref) {
-  final botService = ref.watch(googleMapsServiceProvider);
-  final dio = ref.watch(dioProvider);
-  final places = ref.watch(flutterGooglePlacesSdkProvider);
-  return TaxiRequestNotifier(botService, dio, places);
-});
 
   void setFocus(bool isOrigin) {
     state = state.copyWith(isOriginFocused: isOrigin, predictions: []);
@@ -102,27 +95,11 @@ final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiReque
   void clearOrigin() {
     state = state.copyWith(
       originAddress: '',
-      // originLocation: null, // Optional: Keep marker or remove? Let's keep marker for now to avoid jarring UX, or remove if desired.
-      // If we remove marker, we should also clear route. for "Clear Input", usually just text clears.
-      // But if address is cleared, the sync logic won't overwrite controller.
       predictions: [],
       isOriginInputVisible: true,
       isOriginFocused: true,
     );
   }
-
-final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
-  final appConfig = ref.watch(appConfigProvider);
-  return FlutterGooglePlacesSdk(appConfig.env.googleMapsApiKey); 
-});
-
-// ... StateNotifier
-  final FlutterGooglePlacesSdk _places;
-  // ... constructor
-  TaxiRequestNotifier(this._googleMapsService, this._dio, this._places)
-      : super(TaxiRequestState(sessionToken: const Uuid().v4()));
-
-  // ... 
 
   void onQueryChanged(String query) async {
     // Focus logic...
@@ -145,8 +122,7 @@ final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
       final response = await _places.findAutocompletePredictions(
         query,
         countries: ['mx'], // Restrict to Mexico using SDK
-        newSessionToken: false, // Managed manually or by SDK? SDK manages it if null, but we passed false. 
-        // Actually, let's keep it simple. SDK handles tokens well.
+        newSessionToken: false, 
       );
       
       final preds = response.predictions.map((p) => {
@@ -171,17 +147,19 @@ final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
       // Use SDK to fetch details (bypasses API/Dio restrictions)
       final response = await _places.fetchPlace(
         placeId,
-        fields: [PlaceField.Location, PlaceField.Address, PlaceField.Name],
+        fields: [
+          places_sdk.PlaceField.Location, 
+          places_sdk.PlaceField.Address, 
+          places_sdk.PlaceField.Name
+        ],
       );
       
       final place = response.place;
       
       if (place != null && place.latLng != null) {
+        // Convert SDK LatLng to Google Maps LatLng
         final latLng = LatLng(place.latLng!.lat, place.latLng!.lng);
-        // Use the description from the list, or place.address, or place.name
-        // Description from list is usually best formatted.
-        // But put place.name if available? 
-        // Let's stick to description passed in, or place.address if formatted.
+        
         final address = place.address ?? description;
 
         if (state.isOriginFocused) {
@@ -226,15 +204,12 @@ final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
         final latLng = LatLng(loc.latitude, loc.longitude);
         print('Native Search result: $latLng');
         
-        // Optional: formatting address might be less pretty with native geocoder, 
-        // we can use placemarkFromCoordinates to get a better name if needed, 
-        // or just use the query (capitalized) for now.
-        // Let's try to get a better name.
+        // Improve formatting
         List<geo.Placemark> placemarks = await geo.placemarkFromCoordinates(loc.latitude, loc.longitude);
         String formattedAddress = query;
         if (placemarks.isNotEmpty) {
             final p = placemarks.first;
-            formattedAddress = '${p.street}, ${p.locality}, ${p.country}'; // Improved formatting
+            formattedAddress = '${p.street}, ${p.locality}, ${p.country}'; 
         }
 
         if (state.isOriginFocused) {
@@ -258,7 +233,6 @@ final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
       }
     } catch (e) {
       print('Native Geocoding Error: $e');
-      // Fallback or show error?
     } finally {
       state = state.copyWith(isLoading: false);
     }
@@ -331,10 +305,7 @@ final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
         originLocation: latLng,
         originAddress: address ?? '${latLng.latitude}, ${latLng.longitude}',
         isOriginFocused: false, // Move focus away
-        isOriginInputVisible: false, // Reset to buttons view if using my location? Or show address? User said replace input with buttons... when use my location clicked, input to search should appear? No, "when usare otra ubicacion is clicked the input to search should appear". So "use my location" should probably just fill it and show map. 
-        // Let's keep isOriginInputVisible false if using my location, but show the "Where are you" is filled.
-        // Actually, user said: "replace the ¿Donde estas? input with two buttons... when usar otra ubicacion is clicked the input to search ¿donde estas? should appear"
-        // So if Use My Location is clicked, do we show input? Maybe just set origin and done.
+        isOriginInputVisible: false, 
         isLoading: false,
         sessionToken: _uuid.v4(),
       );
@@ -383,18 +354,12 @@ final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
   // Method to manually clear or reset if needed
   void reset() {
        // Minatitlán, Veracruz default location
-       // 17.9982, -94.5456
        state = TaxiRequestState(
           sessionToken: _uuid.v4(),
           originLocation: const LatLng(17.9982, -94.5456), 
        );
   }
 }
-
-final flutterGooglePlacesSdkProvider = Provider<FlutterGooglePlacesSdk>((ref) {
-  final appConfig = ref.watch(appConfigProvider);
-  return FlutterGooglePlacesSdk(appConfig.env.googleMapsApiKey); 
-});
 
 final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiRequestState>((ref) {
   final botService = ref.watch(googleMapsServiceProvider);
