@@ -63,8 +63,14 @@ Future<void> _downloadLogo(String url) async {
 String _generateAppConfig(Map<String, dynamic> data, String appId) {
   return '''
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yellow/core/config/env.dart';
 
 class AppConfig {
+  final Env env;
+
+  AppConfig({required this.env});
+
   static const String appId = '$appId';
   
   // Colors
@@ -83,6 +89,11 @@ class AppConfig {
   // Assets
   static const String logoUrl = 'assets/images/logo_padded.jpeg';
 }
+
+final appConfigProvider = Provider<AppConfig>((ref) {
+  // This should ideally be initialized in main or overridden
+  throw UnimplementedError('appConfigProvider must be overridden in main.dart');
+});
 ''';
 }
 
