@@ -190,36 +190,59 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     controller: _originController,
                     textInputAction: TextInputAction.search, // Show Search button
                     style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: '¿Dónde estás?',
-                      labelStyle: const TextStyle(color: Colors.grey),
-                      prefixIcon: Container(
-                        width: 120, // Give it some width
-                        padding: const EdgeInsets.only(right: 8), 
-                        child: TextButton.icon(
-                          onPressed: () => taxiNotifier.useMyLocation(),
-                          icon: const Icon(Icons.my_location, size: 18),
-                          label: const Text("Usa mi ubicación", style: TextStyle(fontSize: 12)),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Compact
-                          ),
-                        ),
-                      ),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                           _originController.clear();
-                           taxiNotifier.clearOrigin();
-                        }, 
-                      ),
+                      labelStyle: TextStyle(color: Colors.grey),
+                      prefixIcon: Icon(Icons.my_location, size: 18, color: Colors.blue),
                       border: InputBorder.none,
                     ),
                     onTap: () => taxiNotifier.setFocus(true),
                     onChanged: (val) => taxiNotifier.onQueryChanged(val),
                     onSubmitted: (val) => taxiNotifier.searchLocation(val),
                   ),
+                  
+                  // Action Buttons (Only when focused)
+                  if (taxiState.isOriginFocused)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                 taxiNotifier.useMyLocation();
+                                 FocusScope.of(context).unfocus(); // Optional: close keyboard
+                              },
+                              icon: const Icon(Icons.my_location, size: 16),
+                              label: const Text("Usa mi ubicación"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE0F7FA), // Light Blue
+                                foregroundColor: Colors.blue[700],
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (_originController.text.isNotEmpty)
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                _originController.clear();
+                                taxiNotifier.clearOrigin();
+                              },
+                              icon: const Icon(Icons.close, size: 16),
+                              label: const Text("Limpiar"),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.redAccent),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   
                   // Destination Input (Hidden when Origin focused)
                   if (!taxiState.isOriginFocused)
