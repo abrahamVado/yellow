@@ -1,6 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:yellow/core/config/env.dart';
 
 class AppConfig {
+  final Env env;
+
+  AppConfig({required this.env});
+
   static const String appId = 'com.matheydriver.yellow';
   
   // Colors
@@ -19,3 +24,9 @@ class AppConfig {
   // Assets
   static const String logoUrl = 'assets/images/logo_padded.jpeg';
 }
+
+final appConfigProvider = Provider<AppConfig>((ref) {
+  // This should ideally be initialized in main or overridden
+  throw UnimplementedError('appConfigProvider must be overridden in main.dart');
+});
+

@@ -71,12 +71,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
+  // Load Environment variables
+  final env = await Env.load();
+  final appConfig = AppConfig(env: env);
+
   // Set the background messaging handler early on, as a named top-level function
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
-    const ProviderScope(
-      child: App(),
+    ProviderScope(
+      overrides: [
+        appConfigProvider.overrideWithValue(appConfig),
+      ],
+      child: const App(),
     ),
   );
 }
