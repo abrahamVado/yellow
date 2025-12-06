@@ -276,7 +276,50 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   }
 
   Future<void> useMyLocation() async {
-    // ...
+    state = state.copyWith(isLoading: true);
+    try {
+      // Check permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+            // Permissions are denied
+            state = state.copyWith(isLoading: false);
+            return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        // Permissions are denied forever
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition();
+      final latLng = LatLng(position.latitude, position.longitude);
+
+      // Reverse Geocode
+      final address = await _googleMapsService.getAddressFromCoordinates(latLng);
+
+      state = state.copyWith(
+        originLocation: latLng,
+        originAddress: address ?? '${latLng.latitude}, ${latLng.longitude}',
+        isOriginFocused: false, // Move focus away
+        isOriginInputVisible: false, 
+        isLoading: false,
+        sessionToken: _uuid.v4(),
+      );
+      
+      // Calculate route if destination is already set
+      if (state.destinationLocation != null) {
+          _calculateRoute();
+      }
+
+    } catch (e) {
+      print('Error getting location: $e');
+      state = state.copyWith(isLoading: false);
+    }
   }
 
   Future<bool> createTrip() async {
