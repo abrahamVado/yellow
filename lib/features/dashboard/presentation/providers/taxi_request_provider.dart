@@ -21,6 +21,7 @@ class TaxiRequestState {
   final bool isLoading;
   final bool isOriginInputVisible;
   final bool isOriginFocused;
+  final double estimatedFare;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -33,6 +34,7 @@ class TaxiRequestState {
     this.isLoading = false,
     this.isOriginFocused = true,
     this.isOriginInputVisible = false,
+    this.estimatedFare = 0.0,
   });
 
   TaxiRequestState copyWith({
@@ -46,6 +48,7 @@ class TaxiRequestState {
     bool? isLoading,
     bool? isOriginFocused,
     bool? isOriginInputVisible,
+    double? estimatedFare,
   }) {
     return TaxiRequestState(
       originAddress: originAddress ?? this.originAddress,
@@ -58,6 +61,7 @@ class TaxiRequestState {
       isLoading: isLoading ?? this.isLoading,
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
       isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
+      estimatedFare: estimatedFare ?? this.estimatedFare,
     );
   }
 }
@@ -271,8 +275,18 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       if (routeStart != state.originLocation || routeEnd != state.destinationLocation) return;
       
       final routeInfo = await _googleMapsService.getRouteCoordinates(routeStart, routeEnd);
-      print('Route Calculated: $routeInfo'); // DEBUG LOG
-      state = state.copyWith(routeInfo: routeInfo, isLoading: false);
+      
+      double price = 0.0;
+      if (routeInfo?['distance_value'] != null && routeInfo?['duration_value'] != null) {
+          double distKm = (routeInfo!['distance_value'] as int) / 1000.0;
+          double durMin = (routeInfo!['duration_value'] as int) / 60.0;
+          price = 35.0 + (distKm * 10.0) + (durMin * 2.0);
+          // Round to 2 decimal places
+          price = double.parse(price.toStringAsFixed(2));
+      }
+
+      print('Route Calculated: $routeInfo, Price: $price'); // DEBUG LOG
+      state = state.copyWith(routeInfo: routeInfo, estimatedFare: price, isLoading: false);
   }
 
   Future<void> useMyLocation() async {
@@ -332,7 +346,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'origin_lng': state.originLocation!.longitude,
         'dest_lat': state.destinationLocation?.latitude,
         'dest_lng': state.destinationLocation?.longitude,
-        'fare': 0.0, // Placeholder
+        'fare': state.estimatedFare, 
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
       };

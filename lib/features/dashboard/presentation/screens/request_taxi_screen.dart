@@ -277,6 +277,19 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
+                    // Price Display
+                    if (taxiState.estimatedFare > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Tarifa Estimada: ", style: TextStyle(fontSize: 18, color: Colors.grey)),
+                            Text("\$${taxiState.estimatedFare}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
+                          ],
+                        ),
+                      ),
+                      
                     // Placeholder Price or "Request" Button
                     SizedBox(
                       width: double.infinity,
@@ -323,7 +336,7 @@ class _TripInfoItem extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.grey),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
         Text(label, style: const TextStyle(color: Colors.grey)),
       ],
     );
