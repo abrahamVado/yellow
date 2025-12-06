@@ -393,7 +393,18 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           final success = await taxiNotifier.createTrip();
                           if (success) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Viaje solicitado con éxito!')));
-                            // Navigate to Mis Viajes
+                            
+                            // 1. Reset State (Clears map, route, prices)
+                            taxiNotifier.reset();
+                            
+                            // 2. Clear Inputs
+                            _originController.clear();
+                            _destinationController.clear();
+
+                            // 3. Restart Location Fetch (so it's ready when user comes back)
+                            taxiNotifier.useMyLocation();
+
+                            // 4. Navigate to Mis Viajes
                             // ignore: use_build_context_synchronously
                             Navigator.of(context).push(
                                 MaterialPageRoute(builder: (context) => const MisViajesScreen())
@@ -410,15 +421,14 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: TextButton.icon(
-                        icon: const Icon(Icons.refresh, color: Colors.red),
-                        label: const Text("Cancelar", style: TextStyle(color: Colors.red, fontSize: 16)),
+                        icon: const Icon(Icons.arrow_back, color: Colors.grey),
+                        label: const Text("Cancelar", style: TextStyle(color: Colors.grey, fontSize: 16)),
                         onPressed: () {
                            taxiNotifier.reset();
-                           // Restart flow - fetch location again
-                           taxiNotifier.useMyLocation();
-                           // Clear text fields
                            _originController.clear();
                            _destinationController.clear();
+                           // Navigate back to menu
+                           Navigator.of(context).pop();
                         },
                       ),
                     ),
