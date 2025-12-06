@@ -18,6 +18,7 @@ class TaxiRequestState {
   final Map<String, dynamic>? routeInfo;
   final bool isLoading;
   final bool isOriginInputVisible;
+  final bool isOriginFocused;
 
   TaxiRequestState({
     this.originAddress = '',
