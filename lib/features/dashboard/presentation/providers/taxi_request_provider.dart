@@ -39,7 +39,6 @@ class TaxiRequestState {
     this.isOriginInputVisible = false,
     this.estimatedFare = 0.0,
     this.myTrips = const [],
-    this.myTrips = const [],
     this.errorMessage,
     this.scheduledTime,
   });
@@ -57,7 +56,6 @@ class TaxiRequestState {
     bool? isOriginInputVisible,
     double? estimatedFare,
     List<dynamic>? myTrips,
-    List<dynamic>? myTrips,
     String? errorMessage,
     DateTime? scheduledTime,
   }) {
@@ -73,7 +71,6 @@ class TaxiRequestState {
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
       isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
       estimatedFare: estimatedFare ?? this.estimatedFare,
-      myTrips: myTrips ?? this.myTrips,
       myTrips: myTrips ?? this.myTrips,
       errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
       scheduledTime: scheduledTime ?? this.scheduledTime,
