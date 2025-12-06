@@ -93,8 +93,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
               children: [
                  const Icon(Icons.location_on, size: 16, color: Colors.blue),
                  const SizedBox(width: 4),
-                 // Note: Origin Alias not stored yet, just coords or geocoded address if available not provided by current API list
-                 // Using coords for now or generic text
+                 Expanded(
                    child: Text(
                      "Origen: ${trip['origin_lat']}, ${trip['origin_lng']}",
                      style: const TextStyle(fontSize: 14, color: Colors.black),
