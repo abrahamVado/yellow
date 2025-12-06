@@ -375,6 +375,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   Future<void> fetchMyTrips() async {
     state = state.copyWith(isLoading: true);
     try {
+      final response = await _dio.get('/trips/mine');
       print('FetchTrips Response: ${response.statusCode} - ${response.data}'); // DEBUG
       if (response.statusCode == 200 && response.data['data'] != null) {
           final List<dynamic> trips = response.data['data'];
