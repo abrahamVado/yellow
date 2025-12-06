@@ -25,6 +25,7 @@ class TaxiRequestState {
   final List<dynamic> myTrips;
   final String? errorMessage;
   final DateTime? scheduledTime;
+  final bool isManualSelectionMode;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -41,6 +42,7 @@ class TaxiRequestState {
     this.myTrips = const [],
     this.errorMessage,
     this.scheduledTime,
+    this.isManualSelectionMode = false,
   });
 
   TaxiRequestState copyWith({
@@ -58,6 +60,7 @@ class TaxiRequestState {
     List<dynamic>? myTrips,
     String? errorMessage,
     DateTime? scheduledTime,
+    bool? isManualSelectionMode,
   }) {
     return TaxiRequestState(
       originAddress: originAddress ?? this.originAddress,
@@ -74,6 +77,7 @@ class TaxiRequestState {
       myTrips: myTrips ?? this.myTrips,
       errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
       scheduledTime: scheduledTime ?? this.scheduledTime,
+      isManualSelectionMode: isManualSelectionMode ?? this.isManualSelectionMode,
     );
   }
 }
@@ -429,6 +433,10 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
 
   void setScheduledTime(DateTime? date) {
       state = state.copyWith(scheduledTime: date);
+  }
+
+  void setManualSelectionMode(bool enabled) {
+    state = state.copyWith(isManualSelectionMode: enabled, predictions: []);
   }
 }
 

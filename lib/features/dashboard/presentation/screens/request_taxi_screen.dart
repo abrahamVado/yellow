@@ -20,6 +20,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   final TextEditingController _destinationController = TextEditingController();
   final FocusNode _originFocus = FocusNode();
   final FocusNode _destFocus = FocusNode();
+  LatLng? _currentCameraCenter;
 
   static const CameraPosition _kDefaultLocation = CameraPosition(
     target: LatLng(17.9982, -94.5456), // Minatitlán, Veracruz default
@@ -135,15 +136,56 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                 zoom: 16.0,
               ),
               onMapCreated: (controller) => _mapController = controller,
-              markers: markers,
+              markers: taxiState.isManualSelectionMode ? {} : markers, // Hide markers when selecting manually to avoid clutter
               polylines: polylines,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
+              onCameraMove: (position) {
+                _currentCameraCenter = position.target;
+              },
             ),
 
-          // Inputs Panel (Top)
-          if (taxiState.originLocation != null)
+          // SCOPE SIGHT (Only in Manual Mode)
+          if (taxiState.isManualSelectionMode)
+             const Center(
+               child: Icon(Icons.location_searching, size: 40, color: Colors.black),
+             ),
+
+          // CONFIRM BUTTON (Only in Manual Mode)
+          if (taxiState.isManualSelectionMode)
+            Positioned(
+              bottom: 40,
+              left: 20,
+              right: 20,
+              child: Column(
+                children: [
+                   ElevatedButton(
+                    onPressed: () {
+                      if (_currentCameraCenter != null) {
+                        taxiNotifier.updateDestinationFromMarker(_currentCameraCenter!);
+                        taxiNotifier.setManualSelectionMode(false);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text("Confirmar Ubicación", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => taxiNotifier.setManualSelectionMode(false),
+                    child: const Text("Cancelar", style: TextStyle(color: Colors.white, fontSize: 16, shadows: [Shadow(color: Colors.black, blurRadius: 4)])),
+                  )
+                ],
+              ),
+            ),
+
+          // Inputs Panel (Top) - HIDDEN if Manual Selection Mode
+          if (taxiState.originLocation != null && !taxiState.isManualSelectionMode)
           Positioned(
             top: 100,
             left: 20,
@@ -294,6 +336,26 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           onChanged: (val) => taxiNotifier.onQueryChanged(val),
                           onSubmitted: (val) => taxiNotifier.searchLocation(val),
                         ),
+                        // Choose on Map Button
+                        if (_destFocus.hasFocus) // Only show when focused/typing
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  FocusScope.of(context).unfocus();
+                                  taxiNotifier.setManualSelectionMode(true);
+                                },
+                                icon: const Icon(Icons.map, size: 16),
+                                label: const Text("Seleccionar en el mapa"),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.black,
+                                  side: const BorderSide(color: Colors.grey),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                 ],
@@ -335,7 +397,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
             ),
 
           // Trip Details Card (Bottom)
-          if (taxiState.routeInfo != null)
+          if (taxiState.routeInfo != null && !taxiState.isManualSelectionMode)
             Positioned(
               bottom: 40,
               left: 20,
