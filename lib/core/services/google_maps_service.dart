@@ -100,7 +100,12 @@ class GoogleMapsService {
              'duration_value': legs['duration']['value'], // seconds
              'bounds': route['bounds'],
            };
+        } else {
+             print('Directions API failed: ${data['status']} - ${data['error_message']}');
         }
+      } else {
+        print('Directions API Error: ${response.statusCode} - ${response.statusMessage}');
+        print('You likely need to UNRESTRICT the API Key for HTTP calls.');
       }
       return null;
     } catch (e) {

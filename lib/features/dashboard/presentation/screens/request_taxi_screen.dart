@@ -72,21 +72,23 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
         width: 5,
       ));
       
-      // Auto-zoom to fit bounds if route changes
-      if (_mapController != null && taxiState.routeInfo!['bounds'] != null) {
-         final bounds = taxiState.routeInfo!['bounds'];
-         final northeast = LatLng(bounds['northeast']['lat'], bounds['northeast']['lng']);
-         final southwest = LatLng(bounds['southwest']['lat'], bounds['southwest']['lng']);
-         // Adding a small delay to ensure map is ready
-         Future.delayed(const Duration(milliseconds: 500), () {
-             _mapController?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: southwest, northeast: northeast), 50));
-         });
-      }
+      // Auto-zoom logic moved to ref.listen
     }
 
     ref.listen(taxiRequestProvider, (previous, next) {
+        // Zoom to Origin if changed
         if (previous?.originLocation != next.originLocation && next.originLocation != null) {
-             _mapController?.animateCamera(CameraUpdate.newLatLng(next.originLocation!));
+             _mapController?.animateCamera(CameraUpdate.newLatLngZoom(next.originLocation!, 16));
+        }
+
+        // Zoom to Route if changed
+        if (previous?.routeInfo != next.routeInfo && next.routeInfo != null && next.routeInfo!['bounds'] != null) {
+           final bounds = next.routeInfo!['bounds'];
+           final northeast = LatLng(bounds['northeast']['lat'], bounds['northeast']['lng']);
+           final southwest = LatLng(bounds['southwest']['lat'], bounds['southwest']['lng']);
+           Future.delayed(const Duration(milliseconds: 100), () {
+              _mapController?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: southwest, northeast: northeast), 50));
+           });
         }
     });
 
