@@ -395,6 +395,22 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       state = state.copyWith(isLoading: false, errorMessage: 'Error: $e');
     }
   }
+
+  Future<bool> cancelTrip(int tripId) async {
+      state = state.copyWith(isLoading: true);
+      try {
+          final response = await _dio.put('/trips/$tripId/cancel', data: {'reason': 'User cancelled'});
+          if (response.statusCode == 200) {
+              await fetchMyTrips(); // Refresh list
+              return true;
+          }
+          return false;
+      } catch (e) {
+          print('Error cancelling trip: $e');
+          state = state.copyWith(isLoading: false, errorMessage: 'Error cancelling: $e');
+          return false;
+      }
+  }
   
   // Method to manually clear or reset if needed
   void reset() {

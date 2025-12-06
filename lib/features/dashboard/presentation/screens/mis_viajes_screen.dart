@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
 
 class MisViajesScreen extends ConsumerStatefulWidget {
@@ -14,6 +16,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('es', null);
     // Fetch trips when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(taxiRequestProvider.notifier).fetchMyTrips();
@@ -99,6 +102,8 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
         statusText = 'Cancelado';
     }
 
+    final distanceText = _formatDistance(trip['distance_meters']);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -111,7 +116,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(createdAt, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(_formatDate(createdAt), style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -155,16 +160,86 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
              
             const Divider(),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                if (distanceText.isNotEmpty)
+                  Text(distanceText, style: const TextStyle(color: Colors.grey)),
                 Text("\$${fare.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
               ],
             ),
+            
+            // Cancel Button for 'requested' trips
+            if (status == 'requested')
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _confirmCancel(context, trip['id']),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                    ),
+                    child: const Text("Cancelar Viaje"),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
+
+  String _formatDate(String dateStr) {
+    if (dateStr.isEmpty) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('EEE d MMM, hh:mm a', 'es').format(date.toLocal()); // Improved format
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _formatDistance(dynamic dist) {
+    int meters = 0;
+    if (dist is int) meters = dist;
+    else if (dist is double) meters = dist.toInt(); // In case generic number
+    else if (dist is Map && (dist['Valid'] == true || dist['valid'] == true)) {
+         meters = (dist['Int64'] ?? dist['int64'] ?? 0).toInt();
+    }
+    
+    if (meters == 0) return '';
+    return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  void _confirmCancel(BuildContext context, dynamic tripIdPrimitive) {
+     // Ensure ID is int
+     int tripId = 0;
+     if (tripIdPrimitive is int) tripId = tripIdPrimitive;
+     else if (tripIdPrimitive is double) tripId = tripIdPrimitive.toInt();
+     
+     if (tripId == 0) return;
+
+     showDialog(
+       context: context,
+       builder: (ctx) => AlertDialog(
+         title: const Text("Cancelar Viaje"),
+         content: const Text("¿Estás seguro que deseas cancelar este viaje?"),
+         actions: [
+           TextButton(
+             onPressed: () => Navigator.pop(ctx),
+             child: const Text("No"),
+           ),
+           TextButton(
+             onPressed: () {
+               Navigator.pop(ctx);
+               ref.read(taxiRequestProvider.notifier).cancelTrip(tripId);
+             },
+             child: const Text("Sí, Cancelar", style: TextStyle(color: Colors.red)),
+           ),
+         ],
+       ),
+     );
 
   double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
