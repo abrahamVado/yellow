@@ -31,9 +31,14 @@ class GoogleMapsService {
 
       if (response.statusCode == 200) {
         final data = response.data;
+        print('Autocomplete Response: $data'); // DEBUG LOG
         if (data['status'] == 'OK') {
           return List<Map<String, dynamic>>.from(data['predictions']);
+        } else {
+           print('Autocomplete failed: ${data['status']} - ${data['error_message']}');
         }
+      } else {
+        print('Autocomplete HTTP Error: ${response.statusCode}');
       }
       return [];
     } catch (e) {
