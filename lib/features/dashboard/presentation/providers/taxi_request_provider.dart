@@ -354,6 +354,8 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'origin_lng': state.originLocation!.longitude,
         'dest_lat': state.destinationLocation?.latitude,
         'dest_lng': state.destinationLocation?.longitude,
+        'origin_address': state.originAddress,
+        'dest_address': state.destinationAddress,
         'fare': state.estimatedFare, 
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
