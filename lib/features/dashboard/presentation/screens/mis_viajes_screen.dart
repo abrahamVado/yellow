@@ -240,13 +240,14 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
          ],
        ),
      );
+  }
 
   double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
-     if (value is Map && value.containsKey('Float64')) {
+    if (value is Map && value.containsKey('Float64')) {
          return _parseDouble(value['Float64']);
     }
     return 0.0;
