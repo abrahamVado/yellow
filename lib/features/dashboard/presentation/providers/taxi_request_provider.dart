@@ -22,6 +22,7 @@ class TaxiRequestState {
   final bool isOriginInputVisible;
   final bool isOriginFocused;
   final double estimatedFare;
+  final List<dynamic> myTrips;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -35,6 +36,7 @@ class TaxiRequestState {
     this.isOriginFocused = true,
     this.isOriginInputVisible = false,
     this.estimatedFare = 0.0,
+    this.myTrips = const [],
   });
 
   TaxiRequestState copyWith({
@@ -58,10 +60,22 @@ class TaxiRequestState {
       predictions: predictions ?? this.predictions,
       sessionToken: sessionToken ?? this.sessionToken,
       routeInfo: routeInfo ?? this.routeInfo,
+    double? estimatedFare,
+    List<dynamic>? myTrips,
+  }) {
+    return TaxiRequestState(
+      originAddress: originAddress ?? this.originAddress,
+      originLocation: originLocation ?? this.originLocation,
+      destinationAddress: destinationAddress ?? this.destinationAddress,
+      destinationLocation: destinationLocation ?? this.destinationLocation,
+      predictions: predictions ?? this.predictions,
+      sessionToken: sessionToken ?? this.sessionToken,
+      routeInfo: routeInfo ?? this.routeInfo,
       isLoading: isLoading ?? this.isLoading,
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
       isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
       estimatedFare: estimatedFare ?? this.estimatedFare,
+      myTrips: myTrips ?? this.myTrips,
     );
   }
 }
@@ -365,6 +379,18 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       return false;
     } finally {
       state = state.copyWith(isLoading: false);
+    }
+  }
+
+  Future<void> fetchMyTrips() async {
+    try {
+      final response = await _dio.get('/trips/mine');
+      if (response.statusCode == 200 && response.data['data'] != null) {
+          final List<dynamic> trips = response.data['data'];
+          state = state.copyWith(myTrips: trips);
+      }
+    } catch (e) {
+      print('Error fetching trips: $e');
     }
   }
   

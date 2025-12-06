@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
+import 'package:yellow/features/dashboard/presentation/screens/mis_viajes_screen.dart';
 
 class RequestTaxiScreen extends ConsumerStatefulWidget {
   const RequestTaxiScreen({super.key});
@@ -303,6 +305,11 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           final success = await taxiNotifier.createTrip();
                           if (success) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Viaje solicitado con éxito!')));
+                            // Navigate to Mis Viajes
+                            // ignore: use_build_context_synchronously
+                            Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const MisViajesScreen())
+                            );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
                           }
