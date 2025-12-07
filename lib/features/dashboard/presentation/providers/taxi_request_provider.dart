@@ -295,8 +295,37 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       double price = 0.0;
       if (routeInfo?['distance_value'] != null && routeInfo?['duration_value'] != null) {
           double distKm = (routeInfo!['distance_value'] as int) / 1000.0;
-          double durMin = (routeInfo!['duration_value'] as int) / 60.0;
-          price = 35.0 + (distKm * 10.0) + (durMin * 2.0);
+          
+          try {
+             // Call V2 Pricing API
+             // We need to pass distance_km. is_night is handled by backend or default.
+             // We use POST /trips/calculate which uses the Admin Pricing Handler we reused.
+             // Wait, the route in flutter.go is inside tripsGroup which is /trips. So /trips/calculate.
+             
+             final response = await _dio.post('/trips/calculate', data: {
+                 'distance_km': distKm,
+                 // 'is_night': false // Optional, backend handles it or defaults. 
+                 // Ideally we send isNight based on simple logic if we want to show it now
+             });
+             
+             if (response.statusCode == 200 && response.data['status'] == 'success') {
+                 // Response structure: { status: success, data: { total_amount: ..., ... } }
+                 final data = response.data['data'];
+                 price = (data['total_amount'] as num).toDouble();
+                 print('V2 Price Calculated: $price');
+             } else {
+                 print('V2 Price Calc Failed: ${response.statusCode}');
+                 // Fallback to legacy if API fails?
+                 double durMin = (routeInfo!['duration_value'] as int) / 60.0;
+                 price = 35.0 + (distKm * 10.0) + (durMin * 2.0);
+             }
+          } catch (e) {
+              print('Error calling pricing API: $e');
+              // Fallback V1
+              double durMin = (routeInfo!['duration_value'] as int) / 60.0;
+              price = 35.0 + (distKm * 10.0) + (durMin * 2.0);
+          }
+          
           // Round to 2 decimal places
           price = double.parse(price.toStringAsFixed(2));
       }
