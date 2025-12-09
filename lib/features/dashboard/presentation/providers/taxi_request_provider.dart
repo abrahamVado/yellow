@@ -352,8 +352,8 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
-  Future<bool> createTrip() async {
-    if (state.originLocation == null) return false;
+  Future<int?> createTrip() async {
+    if (state.originLocation == null) return null;
 
     state = state.copyWith(isLoading: true);
     try {
@@ -374,14 +374,15 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       
       final response = await _dio.post('/trips', data: data);
       
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 && response.data['data'] != null) {
           // Success
-          return true;
+          final tripId = response.data['data']['id'];
+          return tripId is int ? tripId : int.tryParse(tripId.toString());
       }
-      return false;
+      return null;
     } catch (e) {
       print('Error creating trip: $e');
-      return false;
+      return null;
     } finally {
       state = state.copyWith(isLoading: false);
     }

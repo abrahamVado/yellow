@@ -6,6 +6,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
 import 'package:yellow/features/dashboard/presentation/screens/mis_viajes_screen.dart';
+import 'package:yellow/features/dashboard/presentation/screens/trip_tracking_screen.dart';
 
 class RequestTaxiScreen extends ConsumerStatefulWidget {
   const RequestTaxiScreen({super.key});
@@ -475,8 +476,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () async {
-                          final success = await taxiNotifier.createTrip();
-                          if (success) {
+                          final tripId = await taxiNotifier.createTrip();
+                          if (tripId != null) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Viaje solicitado con éxito!')));
                             
                             // 1. Reset State (Clears map, route, prices)
@@ -489,10 +490,10 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                             // 3. Restart Location Fetch (so it's ready when user comes back)
                             taxiNotifier.useMyLocation();
 
-                            // 4. Navigate to Mis Viajes
+                            // 4. Navigate to Trip Tracking Screen
                             // ignore: use_build_context_synchronously
                             Navigator.of(context).push(
-                                MaterialPageRoute(builder: (context) => const MisViajesScreen())
+                                MaterialPageRoute(builder: (context) => TripTrackingScreen(tripId: tripId))
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
