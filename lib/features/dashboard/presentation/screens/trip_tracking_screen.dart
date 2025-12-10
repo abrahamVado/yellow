@@ -6,87 +6,39 @@ import 'package:yellow/core/network/dio_client.dart';
 import 'package:dio/dio.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class TripTrackingScreen extends ConsumerStatefulWidget {
+import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
+
+class TripTrackingScreen extends ConsumerWidget {
   final int tripId;
 
   const TripTrackingScreen({super.key, required this.tripId});
 
   @override
-  ConsumerState<TripTrackingScreen> createState() => _TripTrackingScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tripAsync = ref.watch(tripStatusStreamProvider(tripId));
 
-class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
-  Timer? _pollingTimer;
-  Map<String, dynamic>? _tripData;
-  String _status = 'requested'; // requested, matched, in_progress, completed, cancelled
-  bool _isLoading = true;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _startPolling();
-  }
-
-  @override
-  void dispose() {
-    _pollingTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startPolling() {
-    // Poll immediately
-    _fetchTripStatus();
-    // Then every 5 seconds
-    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      _fetchTripStatus();
-    });
-  }
-
-  Future<void> _fetchTripStatus() async {
-    try {
-      final dio = ref.read(dioProvider);
-      final response = await dio.get('/trips/${widget.tripId}');
-
-      if (response.statusCode == 200 && response.data['data'] != null) {
-        final data = response.data['data'];
-        setState(() {
-          _tripData = data;
-          _status = data['status'];
-          _isLoading = false;
-        });
-
-        // Loop management
-        if (['completed', 'cancelled', 'expired'].contains(_status)) {
-           _pollingTimer?.cancel();
-        }
-      }
-    } catch (e) {
-      print('Error polling trip: $e');
-      // Don't stop polling on transient errors, but maybe show snackbar?
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getStatusTitle()),
-        automaticallyImplyLeading: false, // Don't allow back to request
+        title: Text(_getStatusTitle(tripAsync.value?['status'] ?? 'requested')),
+        automaticallyImplyLeading: false, 
         actions: [
-            if (_status == 'requested' || _status == 'matched')
+            if (tripAsync.value?['status'] == 'requested' || tripAsync.value?['status'] == 'matched')
                IconButton(
                  icon: const Icon(Icons.cancel),
-                 onPressed: () => _confirmCancel(),
+                 onPressed: () => _confirmCancel(context, ref),
                )
         ],
       ),
-      body: _buildBody(),
+      body: tripAsync.when(
+        data: (data) => _buildBody(context, data),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error loading trip: $err')),
+      ),
     );
   }
 
-  String _getStatusTitle() {
-    switch (_status) {
+  String _getStatusTitle(String status) {
+    switch (status) {
       case 'requested': return 'Buscando Conductor...';
       case 'matched': return 'Conductor Encontrado';
       case 'in_progress': return 'En Viaje';
@@ -96,12 +48,10 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
     }
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+  Widget _buildBody(BuildContext context, Map<String, dynamic> tripData) {
+    final status = tripData['status'];
 
-    if (_status == 'requested') {
+    if (status == 'requested') {
        return Center(
          child: Column(
            mainAxisAlignment: MainAxisAlignment.center,
@@ -110,34 +60,32 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
              const SizedBox(height: 20),
              const Text("Buscando el mejor conductor para ti...", style: TextStyle(fontSize: 16)),
              const SizedBox(height: 10),
-             Text("Viaje #${widget.tripId}", style: const TextStyle(color: Colors.grey)),
+             Text("Viaje #$tripId", style: const TextStyle(color: Colors.grey)),
            ],
          ),
        );
     }
 
-    if (_status == 'matched' || _status == 'in_progress') {
+    if (status == 'matched' || status == 'in_progress') {
        return Column(
          children: [
-            // Driver Info Card
-            if (_tripData?['driver'] != null)
-              _buildDriverCard(_tripData!['driver']),
+            if (tripData['driver'] != null)
+              _buildDriverCard(tripData['driver']),
             
             Expanded(
               child: GoogleMap(
                 initialCameraPosition: CameraPosition(
-                  target: LatLng(_tripData!['origin_lat'], _tripData!['origin_lng']),
+                  target: LatLng(tripData['origin_lat'], tripData['origin_lng']),
                   zoom: 15,
                 ),
-                markers: _getMarkers(),
-                // TODO: Polylines & Live Driver Location
+                markers: _getMarkers(tripData, status),
               ),
             ),
          ],
        );
     }
     
-    if (_status == 'completed') {
+    if (status == 'completed') {
        return Center(
          child: Column(
            mainAxisAlignment: MainAxisAlignment.center,
@@ -146,10 +94,10 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
              const SizedBox(height: 20),
              const Text("¡Has llegado a tu destino!", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
              const SizedBox(height: 10),
-             Text("Costo Final: \$${_tripData?['fare'] ?? '0.00'}", style: const TextStyle(fontSize: 18)),
+             Text("Costo Final: \$${tripData['fare'] ?? '0.00'}", style: const TextStyle(fontSize: 18)),
              const SizedBox(height: 30),
              ElevatedButton(
-               onPressed: () => Navigator.of(context).pop(), // Go back home
+               onPressed: () => Navigator.of(context).pop(), 
                child: const Text("Finalizar"),
              )
            ],
@@ -157,7 +105,7 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
        );
     }
 
-    return Center(child: Text("Estado: $_status"));
+    return Center(child: Text("Estado: $status"));
   }
 
   Widget _buildDriverCard(Map<String, dynamic> driver) {
@@ -169,7 +117,7 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
            child: Icon(Icons.person, color: Colors.white),
         ),
         title: Text("${driver['first_name']} ${driver['last_name']}"),
-        subtitle: Text("Toyota Prius • ${driver['license_plate'] ?? 'ABC-123'}"), // Placeholder plate
+        subtitle: Text("Toyota Prius • ${driver['license_plate'] ?? 'ABC-123'}"), 
         trailing: Container(
              padding: const EdgeInsets.all(8),
              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(8)),
@@ -179,37 +127,39 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
     );
   }
 
-  Set<Marker> _getMarkers() {
+  Set<Marker> _getMarkers(Map<String, dynamic> tripData, String status) {
     Set<Marker> markers = {};
-    if (_tripData == null) return markers;
 
     markers.add(Marker(
       markerId: const MarkerId('origin'),
-      position: LatLng(_tripData!['origin_lat'], _tripData!['origin_lng']),
+      position: LatLng(tripData['origin_lat'], tripData['origin_lng']),
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
     ));
 
-    if (_status == 'matched' && _tripData!['driver'] != null) {
-       // Driver location (simulated or from data)
-       // Usually 'driver' object in trip response should have 'lat'/'lng' updated?
-       // Currently backend might not nest driver location in 'driver' object of trip response.
-       // We might need a separate call or structure. 
-       // For now, assuming driver location IS NOT in the trip object yet (need to verify API).
+    if (status == 'matched' && tripData['driver'] != null) {
+       final driver = tripData['driver'];
+       if (driver['current_location_lat'] != null && driver['current_location_lng'] != null) {
+          markers.add(Marker(
+            markerId: const MarkerId('driver'),
+            position: LatLng(driver['current_location_lat'], driver['current_location_lng']),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), 
+          ));
+       }
     }
     
     return markers;
   }
 
-  void _confirmCancel() {
-     showDialog(context: context, builder: (context) => AlertDialog(
+  void _confirmCancel(BuildContext context, WidgetRef ref) {
+     showDialog(context: context, builder: (ctx) => AlertDialog(
         title: const Text("¿Cancelar viaje?"),
         content: const Text("¿Estás seguro que deseas cancelar?"),
         actions: [
-           TextButton(onPressed: () => Navigator.pop(context), child: const Text("No")),
+           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("No")),
            TextButton(
              onPressed: () async {
-                 Navigator.pop(context);
-                 _cancelTrip();
+                 Navigator.pop(ctx);
+                 _cancelTrip(context, ref);
              }, 
              child: const Text("Sí, cancelar"),
            ),
@@ -217,14 +167,14 @@ class _TripTrackingScreenState extends ConsumerState<TripTrackingScreen> {
      ));
   }
 
-  Future<void> _cancelTrip() async {
+  Future<void> _cancelTrip(BuildContext context, WidgetRef ref) async {
       try {
         final dio = ref.read(dioProvider);
-        await dio.put('/trips/${widget.tripId}/cancel', data: {'reason': 'Client cancelled'});
-        // Go back
-        if (mounted) Navigator.of(context).pop(); 
+        await dio.put('/trips/$tripId/cancel', data: {'reason': 'Client cancelled'});
+        if (context.mounted) Navigator.of(context).pop(); 
       } catch (e) {
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al cancelar')));
+         if (context.mounted)
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al cancelar')));
       }
   }
 }

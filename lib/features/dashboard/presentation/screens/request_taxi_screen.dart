@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
 import 'package:yellow/features/dashboard/presentation/screens/mis_viajes_screen.dart';
 import 'package:yellow/features/dashboard/presentation/screens/trip_tracking_screen.dart';
@@ -491,10 +492,9 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                             taxiNotifier.useMyLocation();
 
                             // 4. Navigate to Trip Tracking Screen
-                            // ignore: use_build_context_synchronously
-                            Navigator.of(context).push(
-                                MaterialPageRoute(builder: (context) => TripTrackingScreen(tripId: tripId))
-                            );
+                            if (context.mounted) {
+                               context.go('/dashboard/trip-tracking/$tripId');
+                            }
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
                           }

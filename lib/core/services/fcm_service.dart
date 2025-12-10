@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
 
 final fcmServiceProvider = Provider<FCMService>((ref) {
   return FCMService();
@@ -103,9 +104,51 @@ class FCMService {
               priority: Priority.high,
             ),
           ),
+          payload: '${message.data['trip_id']}', 
         );
       }
     });
+
+    // Handle Local Notification Tap
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    // ... iOS settings ...
+  }
+
+  // Setup interaction handlers (Call this from main/app after router is ready)
+  void setupInteractedMessage(GoRouter router) async {
+    // 1. Terminated State
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _handleMessage(initialMessage, router);
+    }
+
+    // 2. Background State
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleMessage(message, router);
+    });
+
+    // 3. Local Notification Tap (Foreground/Background)
+    _localNotifications.initialize(
+      const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (response.payload != null) {
+            debugPrint('Local Notification Payload: ${response.payload}');
+            // Assuming payload is trip_id
+            router.go('/dashboard/trip-tracking/${response.payload}');
+        }
+      },
+    );
+  }
+
+  void _handleMessage(RemoteMessage message, GoRouter router) {
+    debugPrint("Handling Interacted Message: ${message.data}");
+    if (message.data['trip_id'] != null) {
+      router.go('/dashboard/trip-tracking/${message.data['trip_id']}');
+    }
   }
 
   Future<String?> getToken() async {

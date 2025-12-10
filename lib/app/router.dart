@@ -100,6 +100,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               },
             ),
           ),
+          GoRoute(
+            path: 'trip-tracking/:tripId',
+            pageBuilder: (context, state) {
+              final tripIdStr = state.pathParameters['tripId'];
+              final tripId = int.tryParse(tripIdStr ?? '') ?? 0;
+              return CustomTransitionPage(
+                key: state.pageKey,
+                child: TripTrackingScreen(tripId: tripId),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                   const begin = Offset(0.0, 1.0); // Slide from Bottom
+                   const end = Offset.zero;
+                   const curve = Curves.ease;
+                   var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                   return SlideTransition(position: animation.drive(tween), child: child);
+                },
+              );
+            },
+          ),
         ],
       ),
     ],

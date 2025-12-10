@@ -19,8 +19,15 @@ class _AppState extends ConsumerState<App> {
   @override
   void initState() {
     super.initState();
-    // Initialize FCM Service to create notification channels
-    ref.read(fcmServiceProvider).initialize();
+    // Initialize FCM Service
+    final fcmService = ref.read(fcmServiceProvider);
+    fcmService.initialize();
+    
+    // We can't access context or ref.read(appRouterProvider) here safely for navigation 
+    // immediately in initState if the provider depends on context or other things, 
+    // but appRouterProvider is just a Provider.
+    final router = ref.read(appRouterProvider);
+    fcmService.setupInteractedMessage(router);
   }
 
   @override

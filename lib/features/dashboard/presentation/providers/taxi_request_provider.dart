@@ -476,3 +476,20 @@ final taxiRequestProvider = StateNotifierProvider<TaxiRequestNotifier, TaxiReque
   final places = ref.watch(flutterGooglePlacesSdkProvider);
   return TaxiRequestNotifier(botService, dio, places);
 });
+
+final tripStatusStreamProvider = StreamProvider.family<Map<String, dynamic>, int>((ref, tripId) {
+  final dio = ref.watch(dioProvider);
+  return Stream.periodic(const Duration(seconds: 5), (_) {
+      return tripId; // Trigger
+  }).asyncMap((_) async {
+     try {
+        final response = await dio.get('/trips/$tripId');
+        if (response.statusCode == 200 && response.data['data'] != null) {
+            return response.data['data'] as Map<String, dynamic>;
+        }
+        throw Exception('Failed to load trip data');
+     } catch (e) {
+        throw Exception('Error polling trip: $e');
+     }
+  });
+});
