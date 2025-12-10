@@ -109,9 +109,7 @@ class FCMService {
       }
     });
 
-    // Handle Local Notification Tap
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+
     // ... iOS settings ...
   }
 

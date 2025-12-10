@@ -11,6 +11,7 @@ import '../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../features/dashboard/presentation/screens/request_taxi_screen.dart';
 import '../features/dashboard/presentation/screens/mis_viajes_screen.dart';
 import '../features/dashboard/presentation/screens/account_statement_screen.dart';
+import '../features/dashboard/presentation/screens/trip_tracking_screen.dart';
 
 
 
