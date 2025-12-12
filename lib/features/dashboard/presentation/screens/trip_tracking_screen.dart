@@ -104,6 +104,69 @@ class TripTrackingScreen extends ConsumerWidget {
          ),
        );
     }
+    
+    if (status == 'cancelled') {
+       final cancellationReason = tripData['cancellation_reason'] ?? '';
+       final isNoDrivers = cancellationReason == 'no_drivers_available';
+       
+       return Center(
+         child: Padding(
+           padding: const EdgeInsets.all(24.0),
+           child: Column(
+             mainAxisAlignment: MainAxisAlignment.center,
+             children: [
+               Icon(
+                 isNoDrivers ? Icons.info_outline : Icons.cancel_outlined,
+                 color: isNoDrivers ? Colors.orange : Colors.red,
+                 size: 80,
+               ),
+               const SizedBox(height: 20),
+               Text(
+                 isNoDrivers ? "No hay conductores disponibles" : "Viaje Cancelado",
+                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                 textAlign: TextAlign.center,
+               ),
+               const SizedBox(height: 10),
+               Text(
+                 isNoDrivers 
+                   ? "No encontramos conductores cercanos en este momento. Por favor intenta de nuevo."
+                   : "El viaje fue cancelado.",
+                 style: const TextStyle(fontSize: 16, color: Colors.grey),
+                 textAlign: TextAlign.center,
+               ),
+               const SizedBox(height: 30),
+               if (isNoDrivers) ...[
+                 SizedBox(
+                   width: double.infinity,
+                   child: ElevatedButton.icon(
+                     icon: const Icon(Icons.refresh),
+                     style: ElevatedButton.styleFrom(
+                       backgroundColor: Colors.blue,
+                       padding: const EdgeInsets.symmetric(vertical: 16),
+                     ),
+                     onPressed: () {
+                       Navigator.of(context).pop();
+                     },
+                     label: const Text("Intentar de Nuevo", style: TextStyle(fontSize: 16)),
+                   ),
+                 ),
+                 const SizedBox(height: 10),
+               ],
+               SizedBox(
+                 width: double.infinity,
+                 child: OutlinedButton(
+                   onPressed: () => Navigator.of(context).pop(),
+                   style: OutlinedButton.styleFrom(
+                     padding: const EdgeInsets.symmetric(vertical: 16),
+                   ),
+                   child: const Text("Volver al Inicio", style: TextStyle(fontSize: 16)),
+                 ),
+               ),
+             ],
+           ),
+         ),
+       );
+    }
 
     return Center(child: Text("Estado: $status"));
   }

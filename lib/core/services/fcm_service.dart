@@ -144,8 +144,20 @@ class FCMService {
 
   void _handleMessage(RemoteMessage message, GoRouter router) {
     debugPrint("Handling Interacted Message: ${message.data}");
-    if (message.data['trip_id'] != null) {
-      router.go('/dashboard/trip-tracking/${message.data['trip_id']}');
+    
+    final type = message.data['type'];
+    final tripId = message.data['trip_id'];
+    
+    if (tripId != null) {
+      // Handle different notification types
+      if (type == 'trip_cancelled') {
+        // Trip was cancelled by system (no drivers available)
+        // Navigate to tracking screen to show cancellation message
+        router.go('/dashboard/trip-tracking/$tripId');
+      } else {
+        // Default behavior for other trip-related notifications
+        router.go('/dashboard/trip-tracking/$tripId');
+      }
     }
   }
 
