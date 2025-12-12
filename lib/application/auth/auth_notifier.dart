@@ -14,13 +14,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _registerFCM() async {
     try {
+      print('📱 FCM: Initializing...');
       await _fcmService.initialize();
+      
+      print('📱 FCM: Getting token...');
       final token = await _fcmService.getToken();
+      
       if (token != null) {
+        print('📱 FCM: Token obtained, length: ${token.length}');
         await _repository.updateFCMToken(token);
+        print('✅ FCM: Token registered successfully');
+      } else {
+        print('⚠️ FCM: Token is null');
       }
-    } catch (e) {
-      print("Error registering FCM: $e");
+    } catch (e, stackTrace) {
+      print('❌ FCM: Registration failed: $e');
+      print('Stack trace: $stackTrace');
     }
   }
 
@@ -35,7 +44,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         isAuthenticated: true,
       );
-      _registerFCM();
+      // CRITICAL FIX: Await FCM registration to prevent race condition
+      await _registerFCM();
     } catch (error) {
       state = state.copyWith(
         isLoading: false,
@@ -75,7 +85,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         isAuthenticated: true,
       );
-      _registerFCM();
+      // CRITICAL FIX: Await FCM registration
+      await _registerFCM();
     } on UserNotFoundException {
       state = state.copyWith(
         isLoading: false,
@@ -158,7 +169,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         isAuthenticated: true,
       );
-      _registerFCM();
+      // CRITICAL FIX: Await FCM registration
+      await _registerFCM();
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -181,7 +193,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
         // Fetch profile if authenticated
         await fetchProfile();
-        _registerFCM();
+        // CRITICAL FIX: Await FCM registration
+        await _registerFCM();
       } else {
         state = state.copyWith(
           isLoading: false,
