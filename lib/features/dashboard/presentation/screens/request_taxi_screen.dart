@@ -252,6 +252,16 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     onSubmitted: (val) => taxiNotifier.searchLocation(val),
                   ),
                   
+                  // DEBUG ORIGIN COORDINATES
+                  if (taxiState.originLocation != null)
+                     Padding(
+                       padding: const EdgeInsets.only(left: 4, bottom: 8),
+                       child: Text(
+                         "DEBUG: ${taxiState.originLocation!.latitude.toStringAsFixed(5)}, ${taxiState.originLocation!.longitude.toStringAsFixed(5)}",
+                         style: const TextStyle(fontSize: 10, color: Colors.grey),
+                       ),
+                     ),
+
                   // Action Buttons (Only when focused)
                   if (taxiState.isOriginFocused)
                     Padding(
