@@ -9,21 +9,29 @@ class AppConfig {
 
   static const String appId = 'com.matheydriver.yellow';
   
-  // Colors
-  static const Color primaryColor = Color(0xFFfafaf8);
-  static const Color fontColor = Color(0xFFFFFFFF);
-  static const Color waveColor1 = Color(0xFFfed26c);
-  static const Color waveColor2 = Color(0xFFffb300);
-  static const Color buttonColor = Color(0xFFf9b419);
-  static const Color buttonTextColor = Color(0xFF000000);
-
-  // Text
-  static const String title = 'Bienvenido';
-  static const String subtitle = 'Experimenta una nueva manera de transporte';
-  static const String buttonText = 'Siguiente';
-
-  // Assets
+  // App Info
+  static const String appName = 'Mathey Pasajero';
+  static const String version = '1.0.0';
+  static const bool debug = true;
+  
+  // Theme Overrides
+  static const Color primaryColor = Color(0xFFFFC107); // Premium Yellow
+  static const Color fontColor = Color(0xFF212121); // Almost Black
+  static const Color waveColor1 = Color(0xFFFFD54F);
+  static const Color waveColor2 = Color(0xFFFF6F00); // Deep Amber for contrast
+  
+  // Texts
+  static const String title = 'Mathey Pasajero';
+  static const String subtitle = 'Tu viaje, tu seguridad.';
+  static const String buttonText = 'CONTINUAR';
+  
+  static const Color buttonColor = Color(0xFF212121); // Black Buttons
+  static const Color buttonTextColor = Colors.white; // White Texts
   static const String logoUrl = 'assets/images/logo_padded.jpeg';
+  
+  // UI Constants
+  static const double borderRadius = 16.0;
+  static const double defaultPadding = 20.0;
 }
 
 final appConfigProvider = Provider<AppConfig>((ref) {

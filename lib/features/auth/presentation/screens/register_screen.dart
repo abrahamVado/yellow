@@ -74,7 +74,7 @@ class RegisterScreen extends ConsumerWidget {
                       isLoading: state.isLoading,
                       onPressed: handleRegister,
                       backgroundColor: themeConfig.buttonColor,
-                      foregroundColor: themeConfig.buttonTextColor,
+                      foregroundColor: Colors.white,
                     ),
                     const SizedBox(height: 16),
                     TextButton(

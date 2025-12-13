@@ -5,5 +5,5 @@ class AppException implements Exception {
   AppException(this.message, [this.cause]);
 
   @override
-  String toString() => 'AppException: $message';
+  String toString() => message;
 }

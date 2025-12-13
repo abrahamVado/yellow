@@ -20,6 +20,21 @@ class User {
   // Stats
   final int? tripCount;
 
+  // Getters for name parts
+  String get firstName {
+    if (name == null || name!.isEmpty) return '';
+    return name!.split(' ').first;
+  }
+
+  String get lastName {
+    if (name == null || name!.isEmpty) return '';
+    final parts = name!.split(' ');
+    if (parts.length > 1) {
+      return parts.sublist(1).join(' ');
+    }
+    return '';
+  }
+
   const User({
     required this.id,
     required this.email,
