@@ -21,9 +21,8 @@ class Env {
       'APP_ENV',
       defaultValue: 'dev',
     );
-    const googleMapsApiKey = String.fromEnvironment(
       'GOOGLE_MAPS_API_KEY',
-      defaultValue: 'AIzaSyAuofdV67KbI6st3PGuoQ4V1jw-MpzWTCA',
+      defaultValue: '', // Set via --dart-define=GOOGLE_MAPS_API_KEY=...
     );
 
     return Env(
