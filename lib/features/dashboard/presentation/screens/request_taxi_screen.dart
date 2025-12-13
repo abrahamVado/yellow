@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -112,6 +113,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark, // Force dark icons
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: CircleAvatar(

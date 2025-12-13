@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -39,6 +40,7 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       body: taxiState.isLoading 
           ? Center(child: CircularProgressIndicator(color: themeConfig.primaryColor))
