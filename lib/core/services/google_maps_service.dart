@@ -117,6 +117,7 @@ class GoogleMapsService {
   /// Reverse geocoding: Get address from LatLng
   Future<String?> getAddressFromCoordinates(LatLng location) async {
     try {
+      print('🔍 Reverse Geocoding: ${location.latitude}, ${location.longitude}');
       final response = await _dio.get(
         'https://maps.googleapis.com/maps/api/geocode/json',
         queryParameters: {
@@ -125,15 +126,27 @@ class GoogleMapsService {
         },
       );
 
+      print('📍 Geocoding Response Status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = response.data;
+        print('📍 Geocoding API Status: ${data['status']}');
+        
         if (data['status'] == 'OK' && (data['results'] as List).isNotEmpty) {
-          return data['results'][0]['formatted_address'];
+          final address = data['results'][0]['formatted_address'];
+          print('✅ Address Found: $address');
+          return address;
+        } else if (data['status'] == 'REQUEST_DENIED') {
+          print('❌ Geocoding API REQUEST_DENIED - Check API key restrictions!');
+          print('Error message: ${data['error_message']}');
+        } else if (data['status'] == 'ZERO_RESULTS') {
+          print('⚠️ No address found for these coordinates');
+        } else {
+          print('❌ Geocoding failed with status: ${data['status']}');
         }
       }
       return null;
     } catch (e) {
-      print('Error fetching address: $e');
+      print('❌ Error fetching address: $e');
       return null;
     }
   }

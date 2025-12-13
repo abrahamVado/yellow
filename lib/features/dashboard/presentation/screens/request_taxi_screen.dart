@@ -32,8 +32,10 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-fetch location on entry
+    // Reset state to ensure clean start (clears any previous location)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(taxiRequestProvider.notifier).reset();
+      // Auto-fetch location on entry
       ref.read(taxiRequestProvider.notifier).useMyLocation();
     });
   }
@@ -252,16 +254,6 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     onSubmitted: (val) => taxiNotifier.searchLocation(val),
                   ),
                   
-                  // DEBUG ORIGIN COORDINATES
-                  if (taxiState.originLocation != null)
-                     Padding(
-                       padding: const EdgeInsets.only(left: 4, bottom: 8),
-                       child: Text(
-                         "DEBUG: ${taxiState.originLocation!.latitude.toStringAsFixed(5)}, ${taxiState.originLocation!.longitude.toStringAsFixed(5)}",
-                         style: const TextStyle(fontSize: 10, color: Colors.grey),
-                       ),
-                     ),
-
                   // Action Buttons (Only when focused)
                   if (taxiState.isOriginFocused)
                     Padding(
