@@ -59,7 +59,9 @@ class TripTrackingScreen extends ConsumerWidget {
       case 'pending':
         return 'Buscando Conductor...';
       case 'matched': return 'Conductor En Camino';
-      case 'in_progress': return 'Viaje en Curso';
+      case 'in_progress': 
+      case 'picked_up':
+        return 'Viaje en Curso';
       case 'completed': return 'Llegaste';
       case 'cancelled': return 'Cancelado';
       default: return 'Detalles del Viaje';
@@ -125,7 +127,7 @@ class TripTrackingScreen extends ConsumerWidget {
        );
     }
 
-    if (status == 'matched' || status == 'in_progress') {
+    if (status == 'matched' || status == 'in_progress' || status == 'picked_up') {
        return Stack(
          children: [
             GoogleMap(
@@ -208,7 +210,8 @@ class TripTrackingScreen extends ConsumerWidget {
                       ),
 
                       const SizedBox(height: 16),
-                      // Safety Code / OTP Display
+                      // Safety Code / OTP Display - Only show if matched (before pickup)
+                      if (status == 'matched')
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
@@ -232,6 +235,7 @@ class TripTrackingScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
+                      
                       const SizedBox(height: 24),
                       // Status Bar
                       Container(
@@ -252,7 +256,7 @@ class TripTrackingScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  status == 'matched' ? 'El conductor está en camino' : 'Viaje en progreso',
+                                  status == 'matched' ? 'El conductor está en camino' : 'Rumbo a tu destino',
                                   style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
                               ],
@@ -471,7 +475,7 @@ class TripTrackingScreen extends ConsumerWidget {
                       foregroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text("Sí, cancelar viaje", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text("Sí, cancelar viaje", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                   ),
                 ],
               ),
