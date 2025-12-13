@@ -154,7 +154,9 @@ class TripTrackingScreen extends ConsumerWidget {
                       BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5)),
                     ],
                   ),
-                  child: Column(
+                  child: SafeArea(
+                    top: false, 
+                    child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
@@ -187,7 +189,10 @@ class TripTrackingScreen extends ConsumerWidget {
                                     const SizedBox(width: 4),
                                     const Text("4.9", style: TextStyle(fontWeight: FontWeight.bold)),
                                     const SizedBox(width: 8),
-                                    Text("•  ${tripData['driver']['license_plate'] ?? 'Placas Pendientes'}", style: const TextStyle(color: Colors.grey)),
+                                    Text(
+                                      "•  ${tripData['driver']['brand'] != null ? "${tripData['driver']['brand']} ${tripData['driver']['model']} • " : ""}${tripData['driver']['license_plate'] ?? 'Placas Pendientes'}", 
+                                      style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)
+                                    ),
                                   ],
                                 ),
                               ],
@@ -201,6 +206,32 @@ class TripTrackingScreen extends ConsumerWidget {
                           )
                         ],
                       ),
+
+                      const SizedBox(height: 16),
+                      // Safety Code / OTP Display
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.shield, color: Colors.orange, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Código de seguridad: ${tripData['otp'] ?? tripId.toString().padLeft(4, '0')}",
+                              style: const TextStyle(
+                                fontSize: 18, 
+                                fontWeight: FontWeight.bold, 
+                                color: Colors.orange
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       // Status Bar
                       Container(
@@ -212,9 +243,19 @@ class TripTrackingScreen extends ConsumerWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              status == 'matched' ? 'El conductor está en camino' : 'Viaje en progreso',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  status == 'matched' ? 'El conductor está en camino' : 'Viaje en progreso',
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
                             if (status == 'matched')
                               const Text('~ 5 min', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
@@ -225,6 +266,7 @@ class TripTrackingScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+            ),
          ],
        );
     }
@@ -355,7 +397,10 @@ class TripTrackingScreen extends ConsumerWidget {
        if (driver['current_location_lat'] != null && driver['current_location_lng'] != null) {
           markers.add(Marker(
             markerId: const MarkerId('driver'),
-            position: LatLng(driver['current_location_lat'], driver['current_location_lng']),
+            position: LatLng(
+                (driver['current_location_lat'] as num).toDouble(),
+                (driver['current_location_lng'] as num).toDouble()
+            ),
             icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), 
           ));
        }
@@ -365,25 +410,76 @@ class TripTrackingScreen extends ConsumerWidget {
   }
 
   void _confirmCancel(BuildContext context, WidgetRef ref) {
-     showDialog(context: context, builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("¿Cancelar viaje?"),
-        content: const Text("Si cancelas ahora, podrías tener que esperar más para tu próximo viaje."),
-        actions: [
-           TextButton(
-             onPressed: () => Navigator.pop(ctx), 
-             child: const Text("No, mantener viaje", style: TextStyle(color: Colors.black))
-           ),
-           TextButton(
-             onPressed: () async {
-                 Navigator.pop(ctx);
-                 _cancelTrip(context, ref);
-             }, 
-             style: TextButton.styleFrom(foregroundColor: Colors.red),
-             child: const Text("Sí, cancelar"),
-           ),
-        ],
-     ));
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Cancelar",
+      pageBuilder: (ctx, anim1, anim2) {
+        return Container();
+      },
+      transitionBuilder: (ctx, anim1, anim2, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(parent: anim1, curve: Curves.easeInOutBack),
+          child: FadeTransition(
+            opacity: anim1,
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              contentPadding: const EdgeInsets.all(24),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.warning_amber_rounded, color: Colors.red.shade400, size: 40),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "¿Cancelar Viaje?",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Si cancelas ahora, podrías perder tu lugar en la fila de espera.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: const Text("No, mantener viaje", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _cancelTrip(context, ref);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text("Sí, cancelar viaje", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _cancelTrip(BuildContext context, WidgetRef ref) async {
