@@ -21,11 +21,11 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final FlutterLocalNotificationsPlugin localNotifications = FlutterLocalNotificationsPlugin();
   
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'high_importance_channel_v4', // id
-    'High Importance Notifications', // title
-    description: 'This channel is used for important notifications.', // description
+    'high_importance_channel_v5', // id
+    'Notificaciones Importantes', // title
+    description: 'Este canal se usa para notificaciones importantes.', // description
     importance: Importance.max,
-    sound: RawResourceAndroidNotificationSound('notification_sound'),
+    // sound: RawResourceAndroidNotificationSound('notification_sound'),
     playSound: true,
   );
 

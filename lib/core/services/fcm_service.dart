@@ -15,11 +15,11 @@ class FCMService {
   
   // Define the channel with custom sound
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
-    'high_importance_channel_v4', // id
-    'High Importance Notifications', // title
-    description: 'This channel is used for important notifications.', // description
+    'high_importance_channel_v5', // id
+    'Notificaciones Importantes', // title
+    description: 'Este canal se usa para notificaciones importantes.', // description
     importance: Importance.max,
-    sound: RawResourceAndroidNotificationSound('notification_sound'),
+    // sound: RawResourceAndroidNotificationSound('notification_sound'),
     playSound: true,
   );
 
@@ -98,7 +98,7 @@ class FCMService {
               _channel.name,
               channelDescription: _channel.description,
               icon: android.smallIcon,
-              sound: const RawResourceAndroidNotificationSound('notification_sound'),
+              // sound: const RawResourceAndroidNotificationSound('notification_sound'),
               playSound: true,
               importance: Importance.max,
               priority: Priority.high,
@@ -158,6 +158,15 @@ class FCMService {
         // Default behavior for other trip-related notifications
         router.go('/dashboard/trip-tracking/$tripId');
       }
+    }
+  }
+
+  Future<void> deleteToken() async {
+    try {
+      await _messaging.deleteToken();
+      debugPrint("FCM Token deleted");
+    } catch (e) {
+      debugPrint("Error deleting FCM token: $e");
     }
   }
 

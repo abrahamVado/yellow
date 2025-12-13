@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
+import 'package:yellow/app/theme/theme_provider.dart';
+import 'package:yellow/app/theme/app_theme.dart';
 
 class MisViajesScreen extends ConsumerStatefulWidget {
   const MisViajesScreen({super.key});
@@ -26,19 +28,22 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
   @override
   Widget build(BuildContext context) {
     final taxiState = ref.watch(taxiRequestProvider);
+    final themeConfig = ref.watch(themeConfigProvider);
     final myTrips = taxiState.myTrips;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text("Mis Viajes", style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: const Text("Mis Viajes", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: taxiState.isLoading 
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: themeConfig.primaryColor))
           : RefreshIndicator(
+              color: themeConfig.primaryColor,
               onRefresh: () => ref.read(taxiRequestProvider.notifier).fetchMyTrips(),
               child: Stack(
                 children: [
@@ -59,17 +64,25 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
                    
                    myTrips.isEmpty
                     ? ListView(
-                        children: const [
-                          SizedBox(height: 100),
-                           Center(child: Text("No tienes viajes recientes")),
+                        children: [
+                           const SizedBox(height: 100),
+                           Center(
+                             child: Column(
+                               children: [
+                                 Icon(Icons.history, size: 80, color: Colors.grey.shade300),
+                                 const SizedBox(height: 16),
+                                 Text("Aún no tienes viajes", style: TextStyle(fontSize: 18, color: Colors.grey.shade600)),
+                               ],
+                             ),
+                           ),
                         ],
                       )
                     : ListView.builder( 
-                        padding: EdgeInsets.only(top: taxiState.errorMessage != null ? 40 : 16, left: 16, right: 16, bottom: 16),
+                        padding: EdgeInsets.only(top: taxiState.errorMessage != null ? 40 : 16, left: 20, right: 20, bottom: 20),
                         itemCount: myTrips.length,
                         itemBuilder: (context, index) {
                           final trip = myTrips[index];
-                          return TripCard(trip: trip);
+                          return TripCard(trip: trip, theme: themeConfig);
                         },
                       ),
                 ],
@@ -81,7 +94,9 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
 
 class TripCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> trip;
-  const TripCard({super.key, required this.trip});
+  final AppThemeConfig theme;
+  
+  const TripCard({super.key, required this.trip, required this.theme});
 
   @override
   ConsumerState<TripCard> createState() => _TripCardState();
@@ -110,27 +125,36 @@ class _TripCardState extends ConsumerState<TripCard> {
     Color statusColor = Colors.grey;
     String statusText = status;
     
-    if (status == 'requested') {
+    if (status == 'requested' || status == 'queued' || status == 'pending') {
         statusColor = Colors.orange;
         statusText = 'Solicitado';
+    } else if (status == 'matched') {
+        statusColor = Colors.blue;
+        statusText = 'En Camino';
+    } else if (status == 'in_progress') {
+        statusColor = widget.theme.primaryColor;
+        statusText = 'En Viaje';
     } else if (status == 'completed') {
         statusColor = Colors.green;
         statusText = 'Completado';
     } else if (status == 'cancelled') {
         statusColor = Colors.red;
         statusText = 'Cancelado';
+    } else {
+        statusText = status; // Fallback
     }
 
     return Card(
       color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         onTap: () => setState(() => _isExpanded = !_isExpanded),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -138,18 +162,29 @@ class _TripCardState extends ConsumerState<TripCard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on, size: 20, color: Colors.green),
-                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.location_on, size: 24, color: Colors.black),
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Destino", style: TextStyle(color: Colors.grey, fontSize: 12)),
                         Text(
                           destAddress,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(createdAt), 
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                         ),
                       ],
                     ),
@@ -159,9 +194,9 @@ class _TripCardState extends ConsumerState<TripCard> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                        Text("\$${fare.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-                       const SizedBox(height: 4),
+                       const SizedBox(height: 6),
                        Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: statusColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -179,14 +214,16 @@ class _TripCardState extends ConsumerState<TripCard> {
                 secondChild: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Divider(height: 24),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1, color: Colors.grey),
+                    const SizedBox(height: 16),
                     
                     // Origin
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.my_location, size: 20, color: Colors.blue),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.circle_outlined, size: 16, color: Colors.grey),
+                        const SizedBox(width: 12),
                          Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,41 +238,32 @@ class _TripCardState extends ConsumerState<TripCard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     
                     // Metadata Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                         if (distanceText.isNotEmpty)
-                           Row(children: [
-                              const Icon(Icons.straighten, size: 16, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Text(distanceText, style: const TextStyle(color: Colors.grey)),
-                           ]),
-                         Row(children: [
-                            const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(_formatDate(createdAt), style: const TextStyle(color: Colors.grey)),
-                         ]),
-                      ],
-                    ),
+                    if (distanceText.isNotEmpty)
+                    Row(children: [
+                        const Icon(Icons.straighten, size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text("Distancia: $distanceText", style: const TextStyle(color: Colors.grey)),
+                    ]),
 
                     // Cancel Action
                     if (status == 'requested')
                       Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
+                        padding: const EdgeInsets.only(top: 24.0),
                         child: SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () => _confirmCancel(context, trip['id']),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red[700], // Red Blood
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              backgroundColor: Colors.red.shade50,
+                              foregroundColor: Colors.red,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
-                            child: const Text("CANCELAR VIAJE", style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text("CANCELAR SOLICITUD", style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ),
@@ -292,6 +320,7 @@ class _TripCardState extends ConsumerState<TripCard> {
      showDialog(
        context: context,
        builder: (ctx) => AlertDialog(
+         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
          backgroundColor: Colors.white,
          title: const Text("Cancelar Viaje", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
          content: const Text("¿Estás seguro que deseas cancelar este viaje?", style: TextStyle(color: Colors.black)),

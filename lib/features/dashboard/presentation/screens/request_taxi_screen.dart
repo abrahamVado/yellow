@@ -3,11 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
-import 'package:yellow/features/dashboard/presentation/screens/mis_viajes_screen.dart';
-import 'package:yellow/features/dashboard/presentation/screens/trip_tracking_screen.dart';
+import 'package:yellow/app/theme/theme_provider.dart';
 
 class RequestTaxiScreen extends ConsumerStatefulWidget {
   const RequestTaxiScreen({super.key});
@@ -23,11 +21,6 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   final FocusNode _originFocus = FocusNode();
   final FocusNode _destFocus = FocusNode();
   LatLng? _currentCameraCenter;
-
-  static const CameraPosition _kDefaultLocation = CameraPosition(
-    target: LatLng(17.9982, -94.5456), // Minatitlán, Veracruz default
-    zoom: 16.0,
-  );
 
   @override
   void initState() {
@@ -51,6 +44,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
   Widget build(BuildContext context) {
     final taxiState = ref.watch(taxiRequestProvider);
     final taxiNotifier = ref.read(taxiRequestProvider.notifier);
+    final themeConfig = ref.watch(themeConfigProvider);
 
     // Sync controllers with state
     if (_originController.text != taxiState.originAddress && taxiState.originAddress.isNotEmpty) {
@@ -66,7 +60,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       markers.add(Marker(
         markerId: const MarkerId('origin'),
         position: taxiState.originLocation!,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Blue for Origin
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange), // Orange for Origin
         draggable: true,
         onDragEnd: (newPos) => taxiNotifier.updateOriginFromMarker(newPos),
       ));
@@ -75,7 +69,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       markers.add(Marker(
         markerId: const MarkerId('dest'),
         position: taxiState.destinationLocation!,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen), // Green for Destination
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed), // Red for Destination
         draggable: true,
         onDragEnd: (newPos) => taxiNotifier.updateDestinationFromMarker(newPos),
       ));
@@ -89,9 +83,10 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
         points: points.map((p) => LatLng(p.latitude, p.longitude)).toList(),
         color: Colors.black,
         width: 5,
+        jointType: JointType.round,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
       ));
-      
-      // Auto-zoom logic moved to ref.listen
     }
 
     ref.listen(taxiRequestProvider, (previous, next) {
@@ -106,7 +101,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
            final northeast = LatLng(bounds['northeast']['lat'], bounds['northeast']['lng']);
            final southwest = LatLng(bounds['southwest']['lat'], bounds['southwest']['lng']);
            Future.delayed(const Duration(milliseconds: 100), () {
-              _mapController?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: southwest, northeast: northeast), 50));
+              _mapController?.animateCamera(CameraUpdate.newLatLngBounds(LatLngBounds(southwest: southwest, northeast: northeast), 80));
            });
         }
     });
@@ -117,32 +112,43 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: CircleAvatar(
+            backgroundColor: Colors.white,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => context.pop(),
+            ),
+          ),
+        ),
       ),
       body: Stack(
         children: [
           // Google Map Background
-          if (taxiState.originLocation == null)
+          if (taxiState.originLocation == null && !taxiState.isLoading)
+             // Initial Loading State
               const Center(child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   CircularProgressIndicator(),
+                   CircularProgressIndicator(color: Colors.amber),
                    SizedBox(height: 16),
-                   Text("Obteniendo tu ubicación...", style: TextStyle(color: Colors.grey)),
+                   Text("Buscando tu ubicación...", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                 ],
               ))
           else
             GoogleMap(
               initialCameraPosition: CameraPosition(
-                target: taxiState.originLocation!,
+                target: taxiState.originLocation ?? const LatLng(17.9982, -94.5456),
                 zoom: 16.0,
               ),
               onMapCreated: (controller) => _mapController = controller,
-              markers: taxiState.isManualSelectionMode ? {} : markers, // Hide markers when selecting manually to avoid clutter
+              markers: taxiState.isManualSelectionMode ? {} : markers, // Hide markers when selecting manually
               polylines: polylines,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
+              padding: const EdgeInsets.only(bottom: 200), // Push Google Logo up
               onCameraMove: (position) {
                 _currentCameraCenter = position.target;
               },
@@ -150,8 +156,21 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
 
           // SCOPE SIGHT (Only in Manual Mode)
           if (taxiState.isManualSelectionMode)
-             const Center(
-               child: Icon(Icons.location_searching, size: 40, color: Colors.black),
+             Center(
+               child: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 children: [
+                   Icon(Icons.location_on, size: 50, color: themeConfig.primaryColor),
+                   Container(
+                     width: 10,
+                     height: 10,
+                     decoration: const BoxDecoration(
+                       color: Colors.black,
+                       shape: BoxShape.circle,
+                     ),
+                   )
+                 ],
+               ),
              ),
 
           // CONFIRM BUTTON (Only in Manual Mode)
@@ -173,14 +192,20 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      elevation: 8,
                     ),
-                    child: const Text("Confirmar Ubicación", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: const Text("CONFIRMAR UBICACIÓN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => taxiNotifier.setManualSelectionMode(false),
-                    child: const Text("Cancelar", style: TextStyle(color: Colors.white, fontSize: 16, shadows: [Shadow(color: Colors.black, blurRadius: 4)])),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: const Text("Cancelar", style: TextStyle(color: Colors.black, fontSize: 16)),
                   )
                 ],
               ),
@@ -193,12 +218,12 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
             left: 20,
             right: 20,
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 5)),
                 ],
               ),
               child: Column(
@@ -206,20 +231,22 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   // Origin Selection Mode
                   if (!taxiState.isOriginInputVisible && taxiState.originAddress.isEmpty)
                    Column(
-                     crossAxisAlignment: CrossAxisAlignment.start, // Align label to left
+                     crossAxisAlignment: CrossAxisAlignment.start,
                      children: [
-                       const Text("¿Dónde estás?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
-                       const SizedBox(height: 10),
+                       const Text("¿Dónde estás?", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                       const SizedBox(height: 12),
                        Row(
                          children: [
                            Expanded(
                              child: ElevatedButton.icon(
                                onPressed: () => taxiNotifier.useMyLocation(),
-                               icon: const Icon(Icons.my_location, color: Colors.white),
+                               icon: const Icon(Icons.my_location, color: Colors.black),
                                label: const Text("Usa mi ubicación"),
                                style: ElevatedButton.styleFrom(
-                                 backgroundColor: Colors.green,
-                                 foregroundColor: Colors.white,
+                                 backgroundColor: themeConfig.accentColor,
+                                 foregroundColor: Colors.black,
+                                 elevation: 0,
+                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                ),
                              ),
                            ),
@@ -227,7 +254,11 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                            Expanded(
                              child: OutlinedButton(
                                onPressed: () => taxiNotifier.showOriginInput(),
-                               child: const Text("Usar otra"),
+                               style: OutlinedButton.styleFrom(
+                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                 side: BorderSide(color: Colors.grey.shade300),
+                               ),
+                               child: const Text("Buscar otra", style: TextStyle(color: Colors.black)),
                              ),
                            ),
                          ],
@@ -239,88 +270,62 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   TextField(
                     controller: _originController,
                     focusNode: _originFocus,
-                    textInputAction: TextInputAction.search, // Show Search button
-                    style: const TextStyle(color: Colors.black),
-                    decoration: const InputDecoration(
-                      labelText: '¿Dónde estás?',
-                      labelStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(Icons.my_location, size: 18, color: Colors.blue),
-                      border: InputBorder.none,
+                    textInputAction: TextInputAction.search,
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                    decoration: InputDecoration(
+                      labelText: 'Punto de partida',
+                      labelStyle: TextStyle(color: Colors.grey.shade600),
+                      prefixIcon: Icon(Icons.circle, size: 14, color: themeConfig.primaryColor),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     onTap: () => taxiNotifier.setFocus(true),
                     onChanged: (val) => taxiNotifier.onQueryChanged(val),
                     onSubmitted: (val) => taxiNotifier.searchLocation(val),
                   ),
-                  
-                  // DEBUG ORIGIN COORDINATES
-                  if (taxiState.originLocation != null)
-                     Padding(
-                       padding: const EdgeInsets.only(left: 4, bottom: 8),
-                       child: Text(
-                         "DEBUG: ${taxiState.originLocation!.latitude.toStringAsFixed(5)}, ${taxiState.originLocation!.longitude.toStringAsFixed(5)}",
-                         style: const TextStyle(fontSize: 10, color: Colors.grey),
-                       ),
-                     ),
 
                   // Action Buttons (Only when focused)
                   if (taxiState.isOriginFocused)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                      padding: const EdgeInsets.only(top: 12.0),
                       child: Row(
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () {
                                  taxiNotifier.useMyLocation();
-                                 FocusScope.of(context).unfocus(); // Optional: close keyboard
+                                 FocusScope.of(context).unfocus();
                               },
                               icon: const Icon(Icons.my_location, size: 16),
                               label: const Text("Usa mi ubicación"),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE0F7FA), // Light Blue
-                                foregroundColor: Colors.blue[700],
+                                backgroundColor: const Color(0xFFE3F2FD),
+                                foregroundColor: Colors.blue[800],
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          if (_originController.text.isNotEmpty)
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                _originController.clear();
-                                taxiNotifier.clearOrigin();
-                              },
-                              icon: const Icon(Icons.close, size: 16),
-                              label: const Text("Limpiar"),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                                side: const BorderSide(color: Colors.redAccent),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           // Continue Button
+                          if (_originController.text.isNotEmpty)
                           Expanded(
                              child: ElevatedButton.icon(
                                onPressed: () {
                                  taxiNotifier.setFocus(false); // Show destination
-                                 // Focus destination after build
                                  Future.delayed(const Duration(milliseconds: 100), () {
-                                   if (context.mounted) {
-                                      FocusScope.of(context).requestFocus(_destFocus);
-                                   }
+                                   if (context.mounted) FocusScope.of(context).requestFocus(_destFocus);
                                  });
                                }, 
                                icon: const Icon(Icons.arrow_forward, size: 16),
-                               label: const Text("Continuar"),
+                               label: const Text("Confirmar"),
                                style: ElevatedButton.styleFrom(
-                                 backgroundColor: Colors.black, // Primary action
+                                 backgroundColor: Colors.black, 
                                  foregroundColor: Colors.white,
                                  elevation: 0,
-                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                ),
                              ),
                           ),
@@ -332,17 +337,23 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   if (!taxiState.isOriginFocused)
                     Column(
                       children: [
-                        const Divider(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Icon(Icons.more_vert, size: 16, color: Colors.grey.shade300),
+                        ),
                         TextField(
                           controller: _destinationController,
                           focusNode: _destFocus,
-                          textInputAction: TextInputAction.search, // Show Search button
-                          style: const TextStyle(color: Colors.black),
-                          decoration: const InputDecoration(
-                            labelText: '¿A dónde vas?',
-                            labelStyle: TextStyle(color: Colors.grey),
-                            prefixIcon: Icon(Icons.location_on, color: Colors.green),
-                            border: InputBorder.none,
+                          textInputAction: TextInputAction.search,
+                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                          decoration: InputDecoration(
+                            labelText: '¿A dónde quieres ir?',
+                            labelStyle: TextStyle(color: Colors.grey.shade600),
+                            prefixIcon: const Icon(Icons.circle, size: 14, color: Colors.black),
+                            filled: true,
+                            fillColor: Colors.grey.shade50,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
                           onTap: () => taxiNotifier.setFocus(false),
                           onChanged: (val) => taxiNotifier.onQueryChanged(val),
@@ -351,7 +362,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                         // Choose on Map Button
                         if (_destFocus.hasFocus) // Only show when focused/typing
                           Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
+                            padding: const EdgeInsets.only(top: 12.0),
                             child: SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
@@ -364,6 +375,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.black,
                                   side: const BorderSide(color: Colors.grey),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
                                 ),
                               ),
                             ),
@@ -378,32 +391,34 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
           // Autocomplete Suggestions Overlay
           if (taxiState.predictions.isNotEmpty)
             Positioned(
-              top: taxiState.isOriginFocused ? 180 : 250, // Adjust position based on visibility
+              top: taxiState.isOriginFocused ? 200 : 300, 
               left: 20,
               right: 20,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
-                  ],
-                ),
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: ListView.separated(
-                  padding: EdgeInsets.zero,
-                  itemCount: taxiState.predictions.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final p = taxiState.predictions[index];
-                    return ListTile(
-                      title: Text(p['description'] ?? ''),
-                      onTap: () {
-                         taxiNotifier.onPredictionSelected(p['place_id'], p['description']);
-                         FocusScope.of(context).unfocus(); // Hide keyboard
-                      },
-                    );
-                  },
+              child: Material(
+                elevation: 10,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  constraints: const BoxConstraints(maxHeight: 250),
+                  child: ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: taxiState.predictions.length,
+                    separatorBuilder: (context, index) => const Divider(height: 1, indent: 16, endIndent: 16),
+                    itemBuilder: (context, index) {
+                      final p = taxiState.predictions[index];
+                      return ListTile(
+                        leading: const Icon(Icons.location_on_outlined, color: Colors.grey),
+                        title: Text(p['description'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
+                        onTap: () {
+                           taxiNotifier.onPredictionSelected(p['place_id'], p['description']);
+                           FocusScope.of(context).unfocus(); // Hide keyboard
+                        },
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -411,97 +426,96 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
           // Trip Details Card (Bottom)
           if (taxiState.routeInfo != null && !taxiState.isManualSelectionMode)
             Positioned(
-              bottom: 40,
-              left: 20,
-              right: 20,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
+                decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 15),
+                    BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5)),
                   ],
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _TripInfoItem(
                           label: 'Distancia',
                           value: taxiState.routeInfo!['distance_text'],
                           icon: Icons.straighten,
                         ),
+                        Container(height: 40, width: 1, color: Colors.grey.shade200),
                          _TripInfoItem(
                           label: 'Tiempo',
                           value: taxiState.routeInfo!['duration_text'],
-                          icon: Icons.timer,
+                          icon: Icons.timer_outlined,
                         ),
+                        Container(height: 40, width: 1, color: Colors.grey.shade200),
+                         // Price Display (Compact)
+                         Column(
+                           children: [
+                              Text("\$${taxiState.estimatedFare}", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green)),
+                              const Text("Estimado", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                           ],
+                         )
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    // Price Display
-                    if (taxiState.estimatedFare > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text("Tarifa Estimada: ", style: TextStyle(fontSize: 18, color: Colors.grey)),
-                            Text("\$${taxiState.estimatedFare}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
-                          ],
-                        ),
-                      ),
+                    const SizedBox(height: 24),
                     
-                    // Scheduled Time Display & Picker
+                    // Scheduled Time Picker
                     if (taxiState.estimatedFare > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                             if (taxiState.scheduledTime != null)
-                                Text(
-                                  "Programado: ${DateFormat('dd MMM HH:mm').format(taxiState.scheduledTime!)}",
-                                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                                ),
-                             const SizedBox(width: 10),
-                             TextButton.icon(
-                               onPressed: () => _selectDateTime(context, taxiNotifier),
-                               icon: const Icon(Icons.calendar_today, size: 16),
-                               label: Text(taxiState.scheduledTime != null ? "Cambiar" : "Programar"),
-                             )
-                          ],
+                      GestureDetector(
+                        onTap: () => _selectDateTime(context, taxiNotifier),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 24),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                               Icon(Icons.calendar_today, size: 20, color: themeConfig.primaryColor),
+                               const SizedBox(width: 12),
+                               Expanded(
+                                 child: Text(
+                                   taxiState.scheduledTime != null 
+                                     ? "Programado: ${DateFormat('dd MMM HH:mm').format(taxiState.scheduledTime!)}"
+                                     : "Programar este viaje (Ahora)",
+                                   style: const TextStyle(fontWeight: FontWeight.w600),
+                                 ),
+                               ),
+                               const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                            ],
+                          ),
                         ),
                       ),
                       
-                    // Placeholder Price or "Request" Button
+                    // Request Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          backgroundColor: themeConfig.buttonColor,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          elevation: 8,
+                          shadowColor: themeConfig.buttonColor.withOpacity(0.5),
                         ),
                         onPressed: () async {
                           final tripId = await taxiNotifier.createTrip();
                           if (tripId != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Viaje solicitado con éxito!')));
-                            
-                            // 1. Reset State (Clears map, route, prices)
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Viaje solicitado con éxito!')));
                             taxiNotifier.reset();
-                            
-                            // 2. Clear Inputs
                             _originController.clear();
                             _destinationController.clear();
-
-                            // 3. Restart Location Fetch (so it's ready when user comes back)
                             taxiNotifier.useMyLocation();
-
-                            // 4. Navigate to Trip Tracking Screen
                             if (context.mounted) {
                                context.go('/dashboard/trip-tracking/$tripId');
                             }
@@ -510,39 +524,40 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           }
                         },
                           child: Text(
-                            taxiState.scheduledTime != null ? 'Reservar Viaje' : 'Confirmar Viaje', 
-                            style: const TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)
+                            taxiState.scheduledTime != null ? 'RESERVAR VIAJE' : 'CONFIRMAR VIAJE', 
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)
                           ),
                         ),
                       ),
-                    const SizedBox(height: 12),
-                    // Cancel / Reset Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton.icon(
-                        icon: const Icon(Icons.arrow_back, color: Colors.grey),
-                        label: const Text("Cancelar", style: TextStyle(color: Colors.grey, fontSize: 16)),
-                        onPressed: () {
-                           taxiNotifier.reset();
-                           _originController.clear();
-                           _destinationController.clear();
-                           // Navigate back to menu
-                           Navigator.of(context).pop();
-                        },
-                      ),
+                    const SizedBox(height: 16),
+                    // Cancel
+                    TextButton(
+                      child: const Text("Cancelar", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                      onPressed: () {
+                         taxiNotifier.reset();
+                         _originController.clear();
+                         _destinationController.clear();
+                         context.pop();
+                      },
                     ),
                   ],
                 ),
               ),
             ),
             
-           // Only show overlays loader if map is already active (avoid double loader during init)
+           // Loading Overlay
            if (taxiState.isLoading && taxiState.originLocation != null)
-             const Center(child: CircularProgressIndicator()),
+             Container(
+               color: Colors.black12,
+               child: const Center(
+                 child: CircularProgressIndicator(),
+               ),
+             ),
         ],
       ),
     );
   }
+  
   Future<void> _selectDateTime(BuildContext context, TaxiRequestNotifier notifier) async {
     final now = DateTime.now();
     final date = await showDatePicker(
@@ -550,28 +565,20 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       initialDate: now,
       firstDate: now,
       lastDate: now.add(const Duration(days: 7)),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-             colorScheme: const ColorScheme.light(primary: Colors.black),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => Theme(
+        data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Colors.black)),
+        child: child!,
+      ),
     );
     
     if (date != null && context.mounted) {
        final time = await showTimePicker(
          context: context,
          initialTime: TimeOfDay.now(),
-         builder: (context, child) {
-            return Theme(
-              data: ThemeData.light().copyWith(
-                 colorScheme: const ColorScheme.light(primary: Colors.black),
-              ),
-              child: child!,
-            );
-         },
+         builder: (context, child) => Theme(
+             data: ThemeData.light().copyWith(colorScheme: const ColorScheme.light(primary: Colors.black)),
+             child: child!
+         ),
        );
        
        if (time != null) {
@@ -596,10 +603,10 @@ class _TripInfoItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: Colors.grey),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
-        Text(label, style: const TextStyle(color: Colors.grey)),
+        Icon(icon, color: Colors.grey, size: 20),
+        const SizedBox(height: 8),
+        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
       ],
     );
   }

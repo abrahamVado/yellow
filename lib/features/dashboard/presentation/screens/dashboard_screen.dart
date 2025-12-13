@@ -13,7 +13,7 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       extendBodyBehindAppBar: true, // Allow background to go behind AppBar
       appBar: AppBar(
-        title: const Text('Yellow App'),
+        title: const Text('Mathey Pasajero'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),

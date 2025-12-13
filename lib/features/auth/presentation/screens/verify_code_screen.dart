@@ -23,7 +23,7 @@ class VerifyCodeScreen extends ConsumerWidget {
 
     Future<void> handleVerify() async {
       if (!formKey.currentState!.validate()) return;
-
+      
       final ok = await ref
           .read(authNotifierProvider.notifier)
           .verifySmsCode(phone: phone, code: codeCtrl.text.trim());
@@ -34,46 +34,114 @@ class VerifyCodeScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verificar teléfono')),
+      backgroundColor: themeConfig.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => context.go('/login'),
+        ),
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: Card(
-            elevation: 8,
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Enviamos un código a $phone',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+               Container(
+                 padding: const EdgeInsets.all(20),
+                 decoration: BoxDecoration(
+                   color: Colors.white, 
+                   shape: BoxShape.circle,
+                   boxShadow: [
+                     BoxShadow(
+                       color: themeConfig.primaryColor.withOpacity(0.3),
+                       blurRadius: 20,
+                       offset: const Offset(0, 10),
+                     )
+                   ]
+                 ),
+                 child: Icon(Icons.lock_outline_rounded, size: 50, color: themeConfig.primaryColor),
+               ),
+               const SizedBox(height: 30),
+               
+              Card(
+                elevation: 8,
+                shadowColor: Colors.black.withOpacity(0.1),
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Verificación',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Ingresa el código enviado a\n$phone',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600], fontSize: 15),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        TextFormField(
+                          controller: codeCtrl,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                          decoration: InputDecoration(
+                            hintText: '000000',
+                            filled: true,
+                            fillColor: Colors.grey[50], 
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 20),
+                          ),
+                          validator: Validators.requiredField,
+                        ),
+                        
+                        const SizedBox(height: 32),
+                        
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: themeConfig.buttonColor,
+                              foregroundColor: themeConfig.buttonTextColor,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 4,
+                              shadowColor: themeConfig.buttonColor.withOpacity(0.5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: state.isLoading ? null : handleVerify,
+                            child: state.isLoading 
+                              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white))
+                              : const Text(
+                                  'VERIFICAR',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1.2),
+                                ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    AppTextField(
-                      controller: codeCtrl,
-                      label: 'Código de verificación',
-                      validator: Validators.requiredField,
-                    ),
-                    const SizedBox(height: 16),
-                    AppButton(
-                      label: 'Verificar',
-                      isLoading: state.isLoading,
-                      onPressed: handleVerify,
-                      backgroundColor: themeConfig.buttonColor,
-                      foregroundColor: themeConfig.buttonTextColor,
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),

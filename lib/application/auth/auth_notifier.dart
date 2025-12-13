@@ -59,6 +59,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       await _repository.logout();
+      // Delete FCM token to prevent receiving notifications for this user
+      await _fcmService.deleteToken(); 
       state = AuthState.initial();
     } catch (error) {
       state = state.copyWith(
@@ -66,6 +68,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         errorMessage: error.toString(),
       );
     }
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
   }
 
   /// Login using Google account (ID token provided by a callback).
