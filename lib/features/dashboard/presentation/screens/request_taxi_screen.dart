@@ -130,7 +130,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       body: Stack(
         children: [
           // Google Map Background
-          if (taxiState.originLocation == null && !taxiState.isLoading)
+          if (taxiState.originLocation == null)
              // Initial Loading State
               const Center(child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -143,7 +143,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
           else
             GoogleMap(
               initialCameraPosition: CameraPosition(
-                target: taxiState.originLocation ?? const LatLng(17.9982, -94.5456),
+                target: taxiState.originLocation!,
                 zoom: 16.0,
               ),
               onMapCreated: (controller) => _mapController = controller,
