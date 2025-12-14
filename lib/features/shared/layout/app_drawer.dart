@@ -76,6 +76,16 @@ class AppDrawer extends ConsumerWidget {
 
                   _buildModernMenuItem(
                     context,
+                    icon: FontAwesomeIcons.creditCard,
+                    title: 'Métodos de Pago',
+                    onTap: () {
+                      Navigator.pop(context); // Close Drawer
+                      context.push('/dashboard/add-card');
+                    },
+                  ),
+
+                  _buildModernMenuItem(
+                    context,
                     icon: FontAwesomeIcons.arrowRightFromBracket,
                     title: 'Cerrar Sesión',
                     onTap: () async {

@@ -41,6 +41,7 @@ dependencies:
   go_router: ^14.2.0
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.4
+  pay: ^1.1.0
   google_fonts: ^6.1.0
   lucide_icons: ^0.257.0
   google_maps_flutter: ^2.5.0
@@ -86,6 +87,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/default_payment_profile/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -491,6 +491,40 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                         ),
                       ),
                       
+                    // Payment Method Selector
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          _PaymentOption(
+                            label: 'Efectivo',
+                            icon: Icons.money,
+                            isSelected: taxiState.selectedPaymentMethod == 'cash',
+                            onTap: () => taxiNotifier.setPaymentMethod('cash'),
+                          ),
+                          _PaymentOption(
+                            label: (taxiState.selectedPaymentMethod == 'card' && taxiState.defaultPaymentMethod != null)
+                                ? '${taxiState.defaultPaymentMethod['brand'] ?? 'Tarjeta'} ${taxiState.defaultPaymentMethod['last_four'] ?? ''}' 
+                                : 'Tarjeta',
+                            icon: Icons.credit_card,
+                            isSelected: taxiState.selectedPaymentMethod == 'card',
+                            onTap: () async {
+                              final success = await taxiNotifier.setPaymentMethod('card');
+                              if (!success && context.mounted) {
+                                  // Navigate to Add Card
+                                  context.push('/dashboard/add-card');
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
                     // Request Button
                     SizedBox(
                       width: double.infinity,
@@ -750,6 +784,51 @@ class _TripInfoItem extends StatelessWidget {
         Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
       ],
+    );
+  }
+}
+
+class _PaymentOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PaymentOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset:const Offset(0,2))] : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: isSelected ? Colors.black : Colors.grey),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.black : Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

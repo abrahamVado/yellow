@@ -1,0 +1,37 @@
+{
+    "provider": "google_pay",
+    "data": {
+        "environment": "TEST",
+        "apiVersion": 2,
+        "apiVersionMinor": 0,
+        "allowedPaymentMethods": [
+            {
+                "type": "CARD",
+                "tokenizationSpecification": {
+                    "type": "PAYMENT_GATEWAY",
+                    "parameters": {
+                        "gateway": "mercadopago",
+                        "gatewayMerchantId": "YOUR_MERCHANT_ID"
+                    }
+                },
+                "parameters": {
+                    "allowedAuthMethods": [
+                        "PAN_ONLY",
+                        "CRYPTOGRAM_3DS"
+                    ],
+                    "allowedCardNetworks": [
+                        "MASTERCARD",
+                        "VISA"
+                    ]
+                }
+            }
+        ],
+        "merchantInfo": {
+            "merchantName": "Yellow Taxi App"
+        },
+        "transactionInfo": {
+            "countryCode": "MX",
+            "currencyCode": "MXN"
+        }
+    }
+}

@@ -12,6 +12,7 @@ import '../features/dashboard/presentation/screens/request_taxi_screen.dart';
 import '../features/dashboard/presentation/screens/mis_viajes_screen.dart';
 import '../features/dashboard/presentation/screens/account_statement_screen.dart';
 import '../features/dashboard/presentation/screens/trip_tracking_screen.dart';
+import '../features/payment/presentation/screens/add_card_screen.dart';
 
 
 
@@ -118,6 +119,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 },
               );
             },
+          ),
+          GoRoute(
+            path: 'add-card',
+            builder: (context, state) => const AddCardScreen(),
           ),
         ],
       ),

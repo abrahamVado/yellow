@@ -26,6 +26,9 @@ class TaxiRequestState {
   final String? errorMessage;
   final DateTime? scheduledTime;
   final bool isManualSelectionMode;
+  final String selectedPaymentMethod; // 'cash', 'card', 'google_pay'
+  final List<dynamic> paymentMethods;
+  final dynamic defaultPaymentMethod;
 
   TaxiRequestState({
     this.originAddress = '',
@@ -43,6 +46,9 @@ class TaxiRequestState {
     this.errorMessage,
     this.scheduledTime,
     this.isManualSelectionMode = false,
+    this.selectedPaymentMethod = 'cash',
+    this.paymentMethods = const [],
+    this.defaultPaymentMethod,
   });
 
   TaxiRequestState copyWith({
@@ -61,6 +67,9 @@ class TaxiRequestState {
     String? errorMessage,
     DateTime? scheduledTime,
     bool? isManualSelectionMode,
+    String? selectedPaymentMethod,
+    List<dynamic>? paymentMethods,
+    dynamic defaultPaymentMethod,
   }) {
     return TaxiRequestState(
       originAddress: originAddress ?? this.originAddress,
@@ -78,6 +87,9 @@ class TaxiRequestState {
       errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
       scheduledTime: scheduledTime ?? this.scheduledTime,
       isManualSelectionMode: isManualSelectionMode ?? this.isManualSelectionMode,
+      selectedPaymentMethod: selectedPaymentMethod ?? this.selectedPaymentMethod,
+      paymentMethods: paymentMethods ?? this.paymentMethods,
+      defaultPaymentMethod: defaultPaymentMethod ?? this.defaultPaymentMethod,
     );
   }
 }
@@ -397,7 +409,11 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
         'scheduled_at': state.scheduledTime?.toUtc().toIso8601String(),
+<<<<<<< Updated upstream
         'payment_method': paymentMethod,
+=======
+        'payment_method': state.selectedPaymentMethod,
+>>>>>>> Stashed changes
       };
       
       print('Creating Trip with Payload: $data'); // DEBUG LOG
@@ -454,16 +470,60 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       }
   }
   
-  // Method to manually clear or reset state
   void reset() {
        state = TaxiRequestState(
           sessionToken: _uuid.v4(),
           scheduledTime: null,
+          paymentMethods: state.paymentMethods,
+          defaultPaymentMethod: state.defaultPaymentMethod,
+          // selectedPaymentMethod: 'cash', // Reset to cash? Or keep preference?
        );
   }
 
   void setScheduledTime(DateTime? date) {
       state = state.copyWith(scheduledTime: date);
+  }
+
+  Future<bool> setPaymentMethod(String method) async {
+    if (method == 'card') {
+      // Check if we have cards
+      if (state.paymentMethods.isEmpty) {
+        await fetchPaymentMethods();
+      }
+      
+      if (state.paymentMethods.isEmpty) {
+        // No card found, tell UI to redirect to add card
+        return false;
+      }
+      
+      // Select the first one or default
+      final defaultPM = state.paymentMethods.firstWhere((pm) => pm['is_default'] == true, orElse: () => state.paymentMethods.first);
+      state = state.copyWith(selectedPaymentMethod: 'card', defaultPaymentMethod: defaultPM);
+      return true;
+    }
+    
+    state = state.copyWith(selectedPaymentMethod: method);
+    return true;
+  }
+
+  Future<void> fetchPaymentMethods() async {
+    try {
+      final response = await _dio.get('/finance/payment-methods');
+      if (response.statusCode == 200 && response.data != null) {
+          // Assume response is list directly or {data: []}?
+          // Based on handler: c.JSON(http.StatusOK, methods) -> List
+          final List<dynamic> methods = response.data is List ? response.data : (response.data['data'] ?? []);
+          
+          dynamic defaultPM;
+          if (methods.isNotEmpty) {
+             defaultPM = methods.firstWhere((pm) => pm['is_default'] == true, orElse: () => methods.first);
+          }
+          
+          state = state.copyWith(paymentMethods: methods, defaultPaymentMethod: defaultPM);
+      }
+    } catch (e) {
+      print('Error fetching payment methods: $e');
+    }
   }
 
   void setManualSelectionMode(bool enabled) {
