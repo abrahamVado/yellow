@@ -429,7 +429,10 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5)),
                   ],
                 ),
-                child: Column(
+                child: SafeArea(
+                  top: false,
+                  minimum: const EdgeInsets.only(bottom: 20),
+                  child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
@@ -494,29 +497,23 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: themeConfig.buttonColor,
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 8,
                           shadowColor: themeConfig.buttonColor.withOpacity(0.5),
                         ),
-                        onPressed: () async {
-                          final tripId = await taxiNotifier.createTrip();
-                          if (tripId != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Viaje solicitado con éxito!')));
-                            taxiNotifier.reset();
-                            _originController.clear();
-                            _destinationController.clear();
-                            taxiNotifier.useMyLocation();
-                            if (context.mounted) {
-                               context.go('/dashboard/trip-tracking/$tripId');
-                            }
+                        onPressed: () {
+                          if (taxiState.scheduledTime != null) {
+                             // Direct create for scheduled? Or also ask payment?
+                             // Assuming payment needed for all.
+                             _showPaymentSelectionModal(context, taxiNotifier);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
+                             _showPaymentSelectionModal(context, taxiNotifier);
                           }
                         },
                           child: Text(
-                            taxiState.scheduledTime != null ? 'RESERVAR VIAJE' : 'CONFIRMAR VIAJE', 
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)
+                            taxiState.scheduledTime != null ? 'RESERVAR VIAJE' : 'SELECCIONAR PAGO', 
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0)
                           ),
                         ),
                       ),
@@ -535,6 +532,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                 ),
               ),
             ),
+          ),
             
            // Loading Overlay
            if (taxiState.isLoading && taxiState.originLocation != null)
@@ -581,7 +579,160 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
        }
     }
   }
+
+  void _showPaymentSelectionModal(BuildContext context, TaxiRequestNotifier notifier) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => _PaymentSelectionSheet(
+        onConfirm: (method) async {
+           Navigator.pop(ctx); // Close sheet
+           
+           // Show Loading?
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Procesando solicitud...')));
+           
+           final tripId = await notifier.createTrip(paymentMethod: method);
+           
+           if (tripId != null && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Viaje solicitado con éxito!')));
+              notifier.reset();
+              _originController.clear();
+              _destinationController.clear();
+              notifier.useMyLocation();
+              context.go('/dashboard/trip-tracking/$tripId');
+           } else if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
+           }
+        },
+      ),
+    );
+  }
 }
+
+class _PaymentSelectionSheet extends StatefulWidget {
+  final Function(String) onConfirm;
+  const _PaymentSelectionSheet({required this.onConfirm});
+
+  @override
+  State<_PaymentSelectionSheet> createState() => _PaymentSelectionSheetState();
+}
+
+class _PaymentSelectionSheetState extends State<_PaymentSelectionSheet> {
+  String selectedMethod = 'CASH';
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+           Center(
+             child: Container(
+               width: 40, height: 4, 
+               decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+             )
+           ),
+           const SizedBox(height: 24),
+           const Text("Selecciona Método de Pago", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+           const SizedBox(height: 24),
+           
+           _buildOption(
+             id: 'CASH', 
+             icon: Icons.money, 
+             title: 'Efectivo', 
+             subtitle: 'Paga al conductor directamente'
+           ),
+           const SizedBox(height: 12),
+           _buildOption(
+             id: 'WALLET', 
+             icon: Icons.account_balance_wallet, 
+             title: 'Billetera', 
+             subtitle: 'Saldo disponible: \$142.50',
+             isPremium: true
+           ),
+           const SizedBox(height: 12),
+           _buildOption(
+             id: 'CARD', 
+             icon: Icons.credit_card, 
+             title: 'Tarjeta', 
+             subtitle: '**** 1234',
+             isDisabled: true
+           ),
+           
+           const SizedBox(height: 32),
+           SizedBox(
+             width: double.infinity,
+             child: ElevatedButton(
+               style: ElevatedButton.styleFrom(
+                 backgroundColor: Colors.black,
+                 padding: const EdgeInsets.symmetric(vertical: 18),
+                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+               ),
+               onPressed: () => widget.onConfirm(selectedMethod),
+               child: const Text("SOLICITAR TAXI", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+             ),
+           )
+        ],
+      ),
+    ),
+    );
+  }
+
+  Widget _buildOption({
+    required String id, 
+    required IconData icon, 
+    required String title, 
+    String? subtitle, 
+    bool isPremium = false,
+    bool isDisabled = false
+  }) {
+    final isSelected = selectedMethod == id;
+    return GestureDetector(
+      onTap: isDisabled ? null : () => setState(() => selectedMethod = id),
+      child: Opacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.black.withOpacity(0.05) : Colors.white,
+            border: Border.all(
+              color: isSelected ? Colors.black : Colors.grey.shade200, 
+              width: isSelected ? 2 : 1
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+               Icon(icon, color: isPremium ? Colors.orange : Colors.black),
+               const SizedBox(width: 16),
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      if (subtitle != null)
+                        Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                   ],
+                 ),
+               ),
+               if (isSelected)
+                 const Icon(Icons.check_circle, color: Colors.black),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _TripInfoItem extends StatelessWidget {
   final String label;
