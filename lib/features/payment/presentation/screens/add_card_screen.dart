@@ -213,21 +213,17 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
                     }
                   }'''
                 ), 
-                // Or load from asset: PaymentConfiguration.fromAsset('default_payment_profile/gpay.json'),
                 paymentItems: const [
                    PaymentItem(
                     label: 'Verificación de Tarjeta',
-                    amount: '10.00', // Small auth amount? Or just 0?
+                    amount: '10.00', 
                     status: PaymentItemStatus.final_price,
                   )
                 ],
-                type: GooglePayButtonType.save,
+                type: GooglePayButtonType.pay, // Ensure this enum exists in 3.0 or remove if deprecated
                 margin: const EdgeInsets.only(top: 15.0),
                 onPaymentResult: (result) {
                     print("GPay Result: $result");
-                    // Extract token and save
-                    // _handleGPayResult(result);
-                    // For now just logging
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Pay Success (Stub)')));
                 },
                 loadingIndicator: const Center(

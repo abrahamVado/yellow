@@ -47,7 +47,29 @@ class TripTrackingScreen extends ConsumerWidget {
       body: tripAsync.when(
         data: (data) => _buildBody(context, ref, data, themeConfig),
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.amber)),
-        error: (err, stack) => Center(child: Text('Error loading trip: $err')),
+        error: (err, stack) {
+          // Auto-retry logic: Wait 1 second and then refresh the provider
+          Future.delayed(const Duration(seconds: 1), () {
+            if (context.mounted) {
+               ref.invalidate(tripStatusStreamProvider(tripId));
+            }
+          });
+          
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                 SizedBox(
+                   width: 24, 
+                   height: 24, 
+                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey.shade400)
+                 ),
+                 const SizedBox(height: 16),
+                 const Text("Reconectando...", style: TextStyle(color: Colors.grey)),
+              ],
+            )
+          );
+        },
       ),
     );
   }
@@ -295,8 +317,80 @@ class TripTrackingScreen extends ConsumerWidget {
                const SizedBox(height: 12),
                const Text("Esperamos que hayas disfrutado tu viaje.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 16)),
                const SizedBox(height: 40),
-               Text("\$${tripData['fare'] ?? '0.00'}", style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.black)),
-               const Text("Total a pagar", style: TextStyle(color: Colors.grey)),
+               // Fare Amount
+               Text(
+                 "\$${(double.tryParse(tripData['fare']?.toString() ?? '0') ?? 0.0).toStringAsFixed(2)}",
+                 style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.black),
+               ),
+               const SizedBox(height: 8),
+               const Text("MXN", style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500)),
+               const SizedBox(height: 32),
+
+               // Conditional Payment Status
+               if ((tripData['payment_method']?.toString().toLowerCase() ?? '').contains('card') || (tripData['payment_method']?.toString().toLowerCase() ?? '') == 'tarjeta') 
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.credit_card, size: 20, color: Colors.blue.shade800),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Pagado con Tarjeta",
+                          style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 16)
+                        ),
+                      ],
+                    ),
+                  )
+               else if ((tripData['payment_method']?.toString().toLowerCase() ?? '') == 'wallet')
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.purple.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.account_balance_wallet, size: 20, color: Colors.purple.shade800),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Pagado con Billetera",
+                          style: TextStyle(color: Colors.purple.shade800, fontWeight: FontWeight.bold, fontSize: 16)
+                        ),
+                      ],
+                    ),
+                  )
+               else // Default to Cash (Efectivo)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.money_off, size: 20, color: Colors.orange.shade800),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Pago en Efectivo Pendiente",
+                          style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold, fontSize: 16)
+                        ),
+                      ],
+                    ),
+                  ),
+
                const SizedBox(height: 48),
                SizedBox(
                  width: double.infinity,

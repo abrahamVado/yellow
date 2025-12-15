@@ -491,39 +491,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                         ),
                       ),
                       
-                    // Payment Method Selector
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 24),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          _PaymentOption(
-                            label: 'Efectivo',
-                            icon: Icons.money,
-                            isSelected: taxiState.selectedPaymentMethod == 'cash',
-                            onTap: () => taxiNotifier.setPaymentMethod('cash'),
-                          ),
-                          _PaymentOption(
-                            label: (taxiState.selectedPaymentMethod == 'card' && taxiState.defaultPaymentMethod != null)
-                                ? '${taxiState.defaultPaymentMethod['brand'] ?? 'Tarjeta'} ${taxiState.defaultPaymentMethod['last_four'] ?? ''}' 
-                                : 'Tarjeta',
-                            icon: Icons.credit_card,
-                            isSelected: taxiState.selectedPaymentMethod == 'card',
-                            onTap: () async {
-                              final success = await taxiNotifier.setPaymentMethod('card');
-                              if (!success && context.mounted) {
-                                  // Navigate to Add Card
-                                  context.push('/dashboard/add-card');
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Payment Method Selector REMOVED (Redundant)
 
                     // Request Button
                     SizedBox(
@@ -537,20 +505,17 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                           shadowColor: themeConfig.buttonColor.withOpacity(0.5),
                         ),
                         onPressed: () {
-                          if (taxiState.scheduledTime != null) {
-                             // Direct create for scheduled? Or also ask payment?
-                             // Assuming payment needed for all.
-                             _showPaymentSelectionModal(context, taxiNotifier);
-                          } else {
-                             _showPaymentSelectionModal(context, taxiNotifier);
-                          }
+                          // Always show modal for final confirmation
+                           _showPaymentSelectionModal(context, taxiNotifier);
                         },
                           child: Text(
-                            taxiState.scheduledTime != null ? 'RESERVAR VIAJE' : 'SELECCIONAR PAGO', 
+                            taxiState.scheduledTime != null ? 'PROGRAMAR VIAJE' : 'SOLICITAR VIAJE', 
                             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.0)
                           ),
                         ),
                       ),
+// ... (skip down to modal)
+
                     const SizedBox(height: 16),
                     // Cancel
                     TextButton(
@@ -639,24 +604,38 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
            }
         },
+
       ),
     );
   }
 }
 
-class _PaymentSelectionSheet extends StatefulWidget {
+class _PaymentSelectionSheet extends ConsumerStatefulWidget {
   final Function(String) onConfirm;
   const _PaymentSelectionSheet({required this.onConfirm});
 
   @override
-  State<_PaymentSelectionSheet> createState() => _PaymentSelectionSheetState();
+  ConsumerState<_PaymentSelectionSheet> createState() => _PaymentSelectionSheetState();
 }
 
-class _PaymentSelectionSheetState extends State<_PaymentSelectionSheet> {
+class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> {
   String selectedMethod = 'CASH';
 
   @override
+  void initState() {
+    super.initState();
+    // Fetch payment methods when sheet opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       ref.read(taxiRequestProvider.notifier).fetchPaymentMethods();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final taxiState = ref.watch(taxiRequestProvider);
+    final paymentMethods = taxiState.paymentMethods;
+    final defaultCard = taxiState.defaultPaymentMethod;
+
     return SafeArea(
       child: Container(
         decoration: const BoxDecoration(
@@ -666,57 +645,70 @@ class _PaymentSelectionSheetState extends State<_PaymentSelectionSheet> {
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-           Center(
-             child: Container(
-               width: 40, height: 4, 
-               decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-             )
-           ),
-           const SizedBox(height: 24),
-           const Text("Selecciona Método de Pago", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-           const SizedBox(height: 24),
-           
-           _buildOption(
-             id: 'CASH', 
-             icon: Icons.money, 
-             title: 'Efectivo', 
-             subtitle: 'Paga al conductor directamente'
-           ),
-           const SizedBox(height: 12),
-           _buildOption(
-             id: 'WALLET', 
-             icon: Icons.account_balance_wallet, 
-             title: 'Billetera', 
-             subtitle: 'Saldo disponible: \$142.50',
-             isPremium: true
-           ),
-           const SizedBox(height: 12),
-           _buildOption(
-             id: 'CARD', 
-             icon: Icons.credit_card, 
-             title: 'Tarjeta', 
-             subtitle: '**** 1234',
-             isDisabled: true
-           ),
-           
-           const SizedBox(height: 32),
-           SizedBox(
-             width: double.infinity,
-             child: ElevatedButton(
-               style: ElevatedButton.styleFrom(
-                 backgroundColor: Colors.black,
-                 padding: const EdgeInsets.symmetric(vertical: 18),
-                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Center(
+               child: Container(
+                 width: 40, height: 4, 
+                 decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                ),
-               onPressed: () => widget.onConfirm(selectedMethod),
-               child: const Text("SOLICITAR TAXI", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
              ),
-           )
-        ],
+             const SizedBox(height: 24),
+             const Text("Selecciona Método de Pago", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+             const SizedBox(height: 24),
+             
+             // Options
+             _buildOption(
+               id: 'CASH',
+               icon: Icons.money_off, // Or generic money icon
+               title: 'Efectivo',
+               subtitle: 'Paga al conductor directamente',
+             ),
+             const SizedBox(height: 16),
+             _buildOption(
+               id: 'WALLET',
+               icon: Icons.account_balance_wallet,
+               title: 'Billetera',
+               subtitle: 'Saldo disponible: \$142.50', // TODO: Fetch real balance
+               isDisabled: true, // For now disabled or enabled based on logic
+             ),
+             const SizedBox(height: 16),
+             _buildOption(
+               id: 'card', 
+               icon: Icons.credit_card,
+               title: 'Tarjeta',
+               subtitle: (paymentMethods.isNotEmpty && defaultCard != null) 
+                   ? '**** ${defaultCard['card']?.toString().substring((defaultCard['card']?.toString().length ?? 4) - 4) ?? '****'}' 
+                   : 'Agregar tarjeta débito / crédito',
+               onTapOverride: () async {
+                  if (paymentMethods.isEmpty) {
+                     // Navigate to Add Card
+                     await context.push('/dashboard/add-card');
+                     // Refresh
+                     ref.read(taxiRequestProvider.notifier).fetchPaymentMethods();
+                  } else {
+                     setState(() => selectedMethod = 'card');
+                  }
+               }
+             ),
+
+             const SizedBox(height: 32),
+             
+             SizedBox(
+               width: double.infinity,
+               child: ElevatedButton(
+                 style: ElevatedButton.styleFrom(
+                   backgroundColor: Colors.black,
+                   padding: const EdgeInsets.symmetric(vertical: 18),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                 ),
+                 onPressed: () => widget.onConfirm(selectedMethod),
+                 child: const Text("SOLICITAR TAXI", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+               ),
+             )
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -726,11 +718,16 @@ class _PaymentSelectionSheetState extends State<_PaymentSelectionSheet> {
     required String title, 
     String? subtitle, 
     bool isPremium = false,
-    bool isDisabled = false
+    bool isDisabled = false,
+    VoidCallback? onTapOverride,
   }) {
     final isSelected = selectedMethod == id;
+    
+    // Auto-select card if it was tapped effectively
+    // But logic calls setState anyway.
+
     return GestureDetector(
-      onTap: isDisabled ? null : () => setState(() => selectedMethod = id),
+      onTap: isDisabled ? null : (onTapOverride ?? () => setState(() => selectedMethod = id)),
       child: Opacity(
         opacity: isDisabled ? 0.5 : 1.0,
         child: Container(
@@ -738,14 +735,21 @@ class _PaymentSelectionSheetState extends State<_PaymentSelectionSheet> {
           decoration: BoxDecoration(
             color: isSelected ? Colors.black.withOpacity(0.05) : Colors.white,
             border: Border.all(
-              color: isSelected ? Colors.black : Colors.grey.shade200, 
+              color: isSelected ? Colors.black : Colors.grey.shade200,
               width: isSelected ? 2 : 1
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16)
           ),
           child: Row(
             children: [
-               Icon(icon, color: isPremium ? Colors.orange : Colors.black),
+               Container(
+                 padding: const EdgeInsets.all(12),
+                 decoration: BoxDecoration(
+                   color: isSelected ? Colors.black : Colors.grey.shade100,
+                   borderRadius: BorderRadius.circular(12)
+                 ),
+                 child: Icon(icon, color: isSelected ? Colors.white : Colors.black, size: 24),
+               ),
                const SizedBox(width: 16),
                Expanded(
                  child: Column(

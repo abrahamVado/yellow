@@ -403,17 +403,19 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'origin_lng': state.originLocation!.longitude,
         'dest_lat': state.destinationLocation?.latitude,
         'dest_lng': state.destinationLocation?.longitude,
-        'origin_address': state.originAddress,
+        // Ensure address is never empty
+        'origin_address': (state.originAddress.isEmpty) 
+            ? '${state.originLocation!.latitude.toStringAsFixed(6)}, ${state.originLocation!.longitude.toStringAsFixed(6)}'
+            : state.originAddress,
         'dest_address': state.destinationAddress,
         'fare': state.estimatedFare, 
         'distance_meters': state.routeInfo?['distance_value'],
         'duration_seconds': state.routeInfo?['duration_value'],
         'scheduled_at': state.scheduledTime?.toUtc().toIso8601String(),
-<<<<<<< Updated upstream
         'payment_method': paymentMethod,
-=======
-        'payment_method': state.selectedPaymentMethod,
->>>>>>> Stashed changes
+        // Include Card ID if method is card
+        if (paymentMethod == 'card' && state.defaultPaymentMethod != null)
+           'card_id': state.defaultPaymentMethod['id'],
       };
       
       print('Creating Trip with Payload: $data'); // DEBUG LOG

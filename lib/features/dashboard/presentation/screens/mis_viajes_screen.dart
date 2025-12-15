@@ -50,18 +50,54 @@ class _MisViajesScreenState extends ConsumerState<MisViajesScreen> {
               child: Stack(
                 children: [
                    if (taxiState.errorMessage != null)
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          width: double.infinity,
-                          color: Colors.redAccent,
-                          child: Text(
-                            taxiState.errorMessage!,
-                            style: const TextStyle(color: Colors.white),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                      Builder(
+                        builder: (context) {
+                          // Auto-retry logic
+                          if (myTrips.isEmpty) {
+                             Future.delayed(const Duration(seconds: 1), () {
+                               if (context.mounted) {
+                                  ref.read(taxiRequestProvider.notifier).fetchMyTrips();
+                               }
+                             });
+                             
+                             return Center(
+                               child: Column(
+                                 mainAxisAlignment: MainAxisAlignment.center,
+                                 children: [
+                                    SizedBox(
+                                      width: 24, 
+                                      height: 24, 
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey.shade400)
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text("Reconectando...", style: TextStyle(color: Colors.grey)),
+                                 ],
+                               )
+                             );
+                          }
+                          
+                          // If we have data but update failed, show unobtrusive banner or snackbar
+                          // For now, keeping a small banner but auto-retrying
+                          Future.delayed(const Duration(seconds: 5), () {
+                               if (context.mounted) {
+                                  ref.read(taxiRequestProvider.notifier).fetchMyTrips();
+                               }
+                          });
+
+                          return Align(
+                            alignment: Alignment.topCenter,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              width: double.infinity,
+                              color: Colors.orangeAccent,
+                              child: const Text(
+                                "Problemas de conexión. Reintentando...",
+                                style: TextStyle(color: Colors.white, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
                       ),
                    
                    myTrips.isEmpty
