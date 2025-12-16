@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
+import '../models/payment_method.dart';
 
 final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
   return PaymentRepository(ref.read(dioProvider));
@@ -23,5 +24,18 @@ class PaymentRepository {
     }
   }
 
-  // Future<List<PaymentMethod>> getPaymentMethods() ...
+  Future<List<PaymentMethod>> getPaymentMethods() async {
+    try {
+      final response = await _dio.get('/finance/payment-methods');
+      if (response.statusCode == 200 && response.data != null) {
+        // Backend returns raw list based on handler.go: c.JSON(http.StatusOK, methods)
+        final List<dynamic> list = response.data as List<dynamic>;
+        return list.map((e) => PaymentMethod.fromJson(e)).toList();
+      }
+      return [];
+    } catch (e) {
+      // Return empty list on error for now or rethrow
+      return [];
+    }
+  }
 }

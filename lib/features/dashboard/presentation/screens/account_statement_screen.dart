@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../app/theme/theme_provider.dart';
 
@@ -229,7 +230,11 @@ class AccountStatementScreen extends ConsumerWidget {
           child: IconButton(
             icon: Icon(icon, color: color),
             onPressed: () {
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Próximamente...')));
+               if (label == 'Tarjeta') {
+                 context.push('/dashboard/payment-methods');
+               } else {
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Próximamente...')));
+               }
             },
           ),
         ),

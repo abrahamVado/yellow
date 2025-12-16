@@ -13,6 +13,7 @@ import '../features/dashboard/presentation/screens/mis_viajes_screen.dart';
 import '../features/dashboard/presentation/screens/account_statement_screen.dart';
 import '../features/dashboard/presentation/screens/trip_tracking_screen.dart';
 import '../features/payment/presentation/screens/add_card_screen.dart';
+import '../features/payment/presentation/screens/payment_methods_screen.dart';
 
 
 
@@ -101,6 +102,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 return SlideTransition(position: animation.drive(tween), child: child);
               },
             ),
+            ),
+          ),
+           GoRoute(
+            path: 'payment-methods',
+            builder: (context, state) => const PaymentMethodsScreen(),
           ),
           GoRoute(
             path: 'trip-tracking/:tripId',
