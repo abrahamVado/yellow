@@ -393,7 +393,7 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
-  Future<int?> createTrip({String paymentMethod = 'CASH'}) async {
+  Future<int?> createTrip({String paymentMethod = 'CASH', int? cardId}) async {
     if (state.originLocation == null) return null;
 
     state = state.copyWith(isLoading: true);
@@ -414,8 +414,8 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
         'scheduled_at': state.scheduledTime?.toUtc().toIso8601String(),
         'payment_method': paymentMethod,
         // Include Card ID if method is card
-        if (paymentMethod == 'card' && state.defaultPaymentMethod != null)
-           'card_id': state.defaultPaymentMethod['id'],
+        if (paymentMethod == 'card')
+           'card_id': cardId ?? state.defaultPaymentMethod?['id'],
       };
       
       print('Creating Trip with Payload: $data'); // DEBUG LOG

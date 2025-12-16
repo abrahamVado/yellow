@@ -585,13 +585,13 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) => _PaymentSelectionSheet(
-        onConfirm: (method) async {
+        onConfirm: (method, cardId) async {
            Navigator.pop(ctx); // Close sheet
            
            // Show Loading?
            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Procesando solicitud...')));
            
-           final tripId = await notifier.createTrip(paymentMethod: method);
+           final tripId = await notifier.createTrip(paymentMethod: method, cardId: cardId);
            
            if (tripId != null && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Viaje solicitado con éxito!')));
@@ -611,7 +611,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
 }
 
 class _PaymentSelectionSheet extends ConsumerStatefulWidget {
-  final Function(String) onConfirm;
+  final Function(String, int?) onConfirm;
   const _PaymentSelectionSheet({required this.onConfirm});
 
   @override
@@ -635,7 +635,13 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
     final taxiState = ref.watch(taxiRequestProvider);
     final paymentMethods = taxiState.paymentMethods;
     final defaultCard = taxiState.defaultPaymentMethod;
-
+    // Set initial selection if not set (could use widget.initialSelection if added)
+    
+    // Determine the active card ID for UI highlighting
+    // If selectedMethod is 'card', we need a sub-selection. 
+    // For now, we assume if method is 'card', we track specific card ID externally or use default.
+    // Let's rely on local state `selectedMethod` (which we might overload or add a new var).
+    
     return SafeArea(
       child: Container(
         decoration: const BoxDecoration(
@@ -660,37 +666,60 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
              // Options
              _buildOption(
                id: 'CASH',
-               icon: Icons.money_off, // Or generic money icon
+               icon: Icons.money_off,
                title: 'Efectivo',
                subtitle: 'Paga al conductor directamente',
              ),
              const SizedBox(height: 16),
+             
+             // Wallet (Disabled for now)
              _buildOption(
                id: 'WALLET',
                icon: Icons.account_balance_wallet,
                title: 'Billetera',
-               subtitle: 'Saldo disponible: \$142.50', // TODO: Fetch real balance
-               isDisabled: true, // For now disabled or enabled based on logic
+               subtitle: 'Saldo disponible: \$0.00',
+               isDisabled: true, 
              ),
-             const SizedBox(height: 16),
-             _buildOption(
-               id: 'card', 
-               icon: Icons.credit_card,
-               title: 'Tarjeta',
-               subtitle: (paymentMethods.isNotEmpty && defaultCard != null) 
-                   ? '**** ${defaultCard['card']?.toString().substring((defaultCard['card']?.toString().length ?? 4) - 4) ?? '****'}' 
-                   : 'Agregar tarjeta débito / crédito',
-               onTapOverride: () async {
-                  if (paymentMethods.isEmpty) {
-                     // Navigate to Add Card
-                     await context.push('/dashboard/add-card');
-                     // Refresh
-                     ref.read(taxiRequestProvider.notifier).fetchPaymentMethods();
-                  } else {
-                     setState(() => selectedMethod = 'card');
-                  }
-               }
-             ),
+             const SizedBox(height: 24),
+             
+             const Text("Mis Tarjetas", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
+             const SizedBox(height: 12),
+
+             if (paymentMethods.isEmpty)
+                _buildAddCardOption(),
+             
+             ...paymentMethods.map((pm) {
+                 final brand = pm['brand']?.toString().toUpperCase() ?? 'TARJETA';
+                 final last4 = pm['last_four'] ?? pm['card_number']?.toString().substring(pm['card_number'].toString().length - 4) ?? '****';
+                 // Use a composite ID or just check equality if we store object
+                 final cardId = pm['id'];
+                 // We use 'card:$id' as the unique ID for selection logic in this sheet
+                 final selectionId = 'card:$cardId'; 
+                 
+                 return Padding(
+                   padding: const EdgeInsets.only(bottom: 12.0),
+                   child: _buildOption(
+                     id: selectionId,
+                     icon: Icons.credit_card,
+                     title: '$brand  •••• $last4',
+                     subtitle: pm['card_holder_name'] ?? 'Personal',
+                     // If this matches, we are selecting 'card' method with this ID
+                   ),
+                 );
+             }).toList(),
+             
+             if (paymentMethods.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: TextButton.icon(
+                    onPressed: () async {
+                       await context.push('/dashboard/add-card');
+                       ref.read(taxiRequestProvider.notifier).fetchPaymentMethods();
+                    },
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text("Agregar nueva tarjeta"),
+                  ),
+                ),
 
              const SizedBox(height: 32),
              
@@ -702,14 +731,50 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                    padding: const EdgeInsets.symmetric(vertical: 18),
                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                  ),
-                 onPressed: () => widget.onConfirm(selectedMethod),
-                 child: const Text("SOLICITAR TAXI", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                 onPressed: () {
+                    // Start with generic CASH
+                    String method = 'CASH';
+                    int? cardId;
+
+                    if (selectedMethod.startsWith('card:')) {
+                       method = 'card';
+                       cardId = int.tryParse(selectedMethod.split(':')[1]);
+                    } else {
+                       method = selectedMethod;
+                    }
+                    widget.onConfirm(method, cardId); // Pass BOTH
+                 },
+                 child: const Text("SOLICITAR VIAJE", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                ),
              )
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAddCardOption() {
+      return GestureDetector(
+        onTap: () async {
+           await context.push('/dashboard/add-card');
+           ref.read(taxiRequestProvider.notifier).fetchPaymentMethods();
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+          ),
+          child: const Row(
+            children: [
+               Icon(Icons.add_circle_outline, color: Colors.blue),
+               SizedBox(width: 16),
+               Text("Agregar tarjeta débito / crédito", style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      );
   }
 
   Widget _buildOption({
