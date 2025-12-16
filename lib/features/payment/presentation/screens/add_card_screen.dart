@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:pay/pay.dart';
+
 import '../../data/repositories/payment_repository.dart';
 
 class AddCardScreen extends ConsumerStatefulWidget {
@@ -219,61 +219,6 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
               ),
 
               const SizedBox(height: 24),
-              const Center(child: Text("- O -", style: TextStyle(color: Colors.grey))),
-              const SizedBox(height: 24),
-
-              // Google Pay Button
-              GooglePayButton(
-                paymentConfiguration: PaymentConfiguration.fromJsonString(
-                  '''{
-                    "provider": "google_pay",
-                    "data": {
-                      "environment": "TEST",
-                      "apiVersion": 2,
-                      "apiVersionMinor": 0,
-                      "allowedPaymentMethods": [
-                        {
-                          "type": "CARD",
-                          "tokenizationSpecification": {
-                            "type": "PAYMENT_GATEWAY",
-                            "parameters": {
-                              "gateway": "mercadopago",
-                              "gatewayMerchantId": "TEST-8276"
-                            }
-                          },
-                          "parameters": {
-                            "allowedAuthMethods": ["PAN_ONLY", "CRYPTOGRAM_3DS"],
-                            "allowedCardNetworks": ["MASTERCARD", "VISA"]
-                          }
-                        }
-                      ],
-                      "merchantInfo": {
-                        "merchantName": "Yellow Taxi App"
-                      },
-                      "transactionInfo": {
-                        "countryCode": "MX",
-                        "currencyCode": "MXN"
-                      }
-                    }
-                  }'''
-                ), 
-                paymentItems: const [
-                   PaymentItem(
-                    label: 'Verificación de Tarjeta',
-                    amount: '10.00', 
-                    status: PaymentItemStatus.final_price,
-                  )
-                ],
-                type: GooglePayButtonType.pay, // Ensure this enum exists in 3.0 or remove if deprecated
-                margin: const EdgeInsets.only(top: 15.0),
-                onPaymentResult: (result) {
-                    print("GPay Result: $result");
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Pay Success (Stub)')));
-                },
-                loadingIndicator: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ),
             ],
           ),
         ),
