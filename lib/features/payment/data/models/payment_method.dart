@@ -4,6 +4,7 @@ class PaymentMethod {
   final String provider;
   final String lastFour;
   final String brand;
+  final String cardHolderName;
   final bool isDefault;
 
   PaymentMethod({
@@ -12,6 +13,7 @@ class PaymentMethod {
     required this.provider,
     required this.lastFour,
     required this.brand,
+    required this.cardHolderName,
     required this.isDefault,
   });
 
@@ -22,6 +24,7 @@ class PaymentMethod {
       provider: json['provider'] as String? ?? 'mercadopago',
       lastFour: json['last_four'] as String? ?? '',
       brand: json['brand'] as String? ?? '',
+      cardHolderName: json['card_holder_name'] as String? ?? '',
       isDefault: json['is_default'] as bool? ?? false,
     );
   }

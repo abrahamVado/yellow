@@ -24,6 +24,14 @@ class PaymentRepository {
     }
   }
 
+  Future<void> deletePaymentMethod(int id) async {
+    try {
+      await _dio.delete('/finance/payment-methods/$id');
+    } catch (e) {
+      throw Exception('Failed to delete payment method: $e');
+    }
+  }
+
   Future<List<PaymentMethod>> getPaymentMethods() async {
     try {
       final response = await _dio.get('/finance/payment-methods');

@@ -77,11 +77,42 @@ class PaymentMethodsScreen extends ConsumerWidget {
                                 style: const TextStyle(fontWeight: FontWeight.bold)
                               ),
                               Text("•••• ${method.lastFour}", style: const TextStyle(color: Colors.grey)),
+                              if (method.cardHolderName.isNotEmpty)
+                                Text(
+                                  method.cardHolderName.toUpperCase(),
+                                  style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                                ),
                             ],
                           ),
                         ),
                         if (method.isDefault)
-                          const Chip(label: Text("Default", style: TextStyle(fontSize: 10, color: Colors.white)), backgroundColor: Colors.blue)
+                          const Chip(label: Text("Default", style: TextStyle(fontSize: 10, color: Colors.white)), backgroundColor: Colors.blue),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Eliminar Tarjeta'),
+                                  content: Text('¿Seguro que deseas eliminar la tarjeta terminada en ${method.lastFour}?'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar', style: TextStyle(color: Colors.red))),
+                                  ],
+                                ),
+                              );
+
+                              if (confirmed == true) {
+                                try {
+                                  final repo = ref.read(paymentRepositoryProvider);
+                                  await repo.deletePaymentMethod(method.id);
+                                  ref.refresh(paymentMethodsProvider);
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                                }
+                              }
+                          },
+                        )
                       ],
                     ),
                   );
