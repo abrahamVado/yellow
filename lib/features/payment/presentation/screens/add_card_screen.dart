@@ -32,29 +32,10 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
   }
 
   Future<void> _fetchSettings() async {
-    // We assume there's a provider or repository to get public app settings
-    // For now, we'll try to get it via the PaymentRepository or similar if implemented.
-    // Ideally: ref.read(settingsProvider).mpPublicKey
-    
-    // Quick fix: let's assume the user put the key in the .env of the Flutter app OR we fetch it.
-    // But the user asked to "take the data from where is saved" (Backoffice).
-    // So distinctively, we should fetch it from the API /api/settings/:app_id if possible.
-    
-    // For this specific step, we will use a placeholder that clearly indicates it should come from the server
-    // or if we have a settings repository, use it.
-    
-    // Let's hardcode the getter from a prospective `settingsRepository`
-    // final settings = await ref.read(settingsRepositoryProvider).getAppSettings();
-    // setState(() { _mpPublicKey = settings.mpPublicKey; });
-    
-    // Since we don't have the settings repo visible here yet, I'll add a helper method to fetch it via Dio for now
-    // or keep the hardcoded for a moment but mark it clearly. 
-    
-    // actually, let's implement a quick fetch if possible.
     try {
-        final dio = Dio(); 
-        // Assuming app_id = 1 for now or passed in
-        final response = await dio.get('http://10.0.2.2:8080/api/settings/1'); 
+        final dio = ref.read(dioProvider);
+        // Assuming app_id = 1 for now
+        final response = await dio.get('/api/settings/1'); 
         if (response.statusCode == 200 && response.data['data'] != null) {
             setState(() {
                 _mpPublicKey = response.data['data']['mp_public_key'];
