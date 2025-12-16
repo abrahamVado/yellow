@@ -586,24 +586,35 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Confirmación de Seguridad', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        title: const Text('Confirmación de Seguridad', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Ingresa el CVV de tu tarjeta para autorizar el cobro al finalizar el viaje.'),
+            const Text(
+               'Ingresa el CVV de tu tarjeta para autorizar el cobro al finalizar el viaje.',
+               style: TextStyle(color: Colors.black87),
+            ),
             const SizedBox(height: 16),
              TextField(
               autofocus: true,
               keyboardType: TextInputType.number,
               obscureText: true,
               maxLength: 4,
+              cursorColor: Colors.black,
+              style: const TextStyle(color: Colors.black),
               decoration: const InputDecoration(
                 labelText: 'CVV',
+                labelStyle: TextStyle(color: Colors.black54),
                 hintText: '123',
-                border: OutlineInputBorder(),
+                hintStyle: TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(borderSide: BorderSide(color: Colors.black26)),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.black)),
                 counterText: "",
-                prefixIcon: Icon(Icons.lock_outline),
+                prefixIcon: Icon(Icons.lock_outline, color: Colors.black54),
+                filled: true,
+                fillColor: Colors.white,
               ),
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: (val) => cvv = val,
@@ -613,10 +624,13 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.black54)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black, 
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
             onPressed: () {
                if (cvv.length >= 3) {
                   Navigator.pop(context, cvv);
