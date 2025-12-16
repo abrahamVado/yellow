@@ -5,6 +5,7 @@ class PaymentMethod {
   final String lastFour;
   final String brand;
   final String cardHolderName;
+  final String token;
   final bool isDefault;
 
   PaymentMethod({
@@ -14,6 +15,7 @@ class PaymentMethod {
     required this.lastFour,
     required this.brand,
     required this.cardHolderName,
+    required this.token,
     required this.isDefault,
   });
 
@@ -25,6 +27,7 @@ class PaymentMethod {
       lastFour: json['last_four'] as String? ?? '',
       brand: json['brand'] as String? ?? '',
       cardHolderName: json['card_holder_name'] as String? ?? '',
+      token: json['token'] as String? ?? '',
       isDefault: json['is_default'] as bool? ?? false,
     );
   }

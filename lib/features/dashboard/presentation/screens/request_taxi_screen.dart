@@ -667,7 +667,20 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                   final publicKey = await repo.getPublicKey();
                   if (publicKey == null) throw Exception("Error de configuración");
                   
-                  token = await repo.tokenizeSavedCard(cardId.toString(), cvv, publicKey);
+                  // Find the MP Card ID (Token) from the provider list
+                  final methods = ref.read(taxiRequestProvider).paymentMethods;
+                  final selectedMethod = methods.firstWhere(
+                      (m) => m['id'] == cardId, 
+                      orElse: () => null
+                  );
+                  
+                  if (selectedMethod == null) throw Exception("Tarjeta no encontrada");
+                  
+                  // Use the MP Card Token (stored in 'token' field)
+                  final mpCardId = selectedMethod['token']?.toString() ?? '';
+                  if (mpCardId.isEmpty) throw Exception("Datos de tarjeta inválidos");
+
+                  token = await repo.tokenizeSavedCard(mpCardId, cvv, publicKey);
                } catch (e) {
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
                   return;
