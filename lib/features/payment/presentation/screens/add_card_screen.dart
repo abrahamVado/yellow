@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../../core/network/dio_client.dart';
 import '../../data/repositories/payment_repository.dart';
 
 class AddCardScreen extends ConsumerStatefulWidget {
