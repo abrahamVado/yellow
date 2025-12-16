@@ -102,7 +102,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 return SlideTransition(position: animation.drive(tween), child: child);
               },
             ),
-
+          ),
            GoRoute(
             path: 'payment-methods',
             builder: (context, state) => const PaymentMethodsScreen(),
