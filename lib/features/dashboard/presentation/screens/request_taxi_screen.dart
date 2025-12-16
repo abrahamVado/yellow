@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
+import 'package:yellow/features/payment/data/repositories/payment_repository.dart';
 import 'package:yellow/app/theme/theme_provider.dart';
 
 class RequestTaxiScreen extends ConsumerStatefulWidget {
@@ -579,6 +580,55 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
     }
   }
 
+  Future<String?> _showCvvDialog(BuildContext context) async {
+    String cvv = '';
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmación de Seguridad', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Ingresa el CVV de tu tarjeta para autorizar el cobro al finalizar el viaje.'),
+            const SizedBox(height: 16),
+             TextField(
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: 4,
+              decoration: const InputDecoration(
+                labelText: 'CVV',
+                hintText: '123',
+                border: OutlineInputBorder(),
+                counterText: "",
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (val) => cvv = val,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
+            onPressed: () {
+               if (cvv.length >= 3) {
+                  Navigator.pop(context, cvv);
+               }
+            },
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showPaymentSelectionModal(BuildContext context, TaxiRequestNotifier notifier) {
     showModalBottomSheet(
       context: context,
@@ -588,10 +638,32 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
         onConfirm: (method, cardId) async {
            Navigator.pop(ctx); // Close sheet
            
-           // Show Loading?
-           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Procesando solicitud...')));
+           String? token;
            
-           final tripId = await notifier.createTrip(paymentMethod: method, cardId: cardId);
+           // CVV Prompt for Cards
+           if (method == 'card' && cardId != null) {
+               final cvv = await _showCvvDialog(context);
+               if (cvv == null) return; // Cancelled
+               
+               // Show processing
+               if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verificando tarjeta...')));
+               
+               try {
+                  final repo = ref.read(paymentRepositoryProvider);
+                  final publicKey = await repo.getPublicKey();
+                  if (publicKey == null) throw Exception("Error de configuración");
+                  
+                  token = await repo.tokenizeSavedCard(cardId.toString(), cvv, publicKey);
+               } catch (e) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+                  return;
+               }
+           }
+
+           // Show Loading
+           if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solicitando viaje...'))); // Consider using a better loader
+           
+           final tripId = await notifier.createTrip(paymentMethod: method, cardId: cardId, token: token);
            
            if (tripId != null && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Viaje solicitado con éxito!')));
@@ -601,7 +673,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
               notifier.useMyLocation();
               context.go('/dashboard/trip-tracking/$tripId');
            } else if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje')));
+              // Error is usually handled/printed by provider but lets show generic error
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al solicitar viaje. Intente nuevamente.')));
            }
         },
 

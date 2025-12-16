@@ -46,4 +46,32 @@ class PaymentRepository {
       return [];
     }
   }
+  Future<String> tokenizeSavedCard(String cardId, String cvv, String publicKey) async {
+    final dio = Dio(); // New Dio instance to avoid interceptors (or use basic one)
+    try {
+      final response = await dio.post(
+        'https://api.mercadopago.com/v1/card_tokens?public_key=$publicKey',
+        data: {
+          "card_id": cardId,
+          "security_code": cvv,
+        },
+      );
+      return response.data['id'];
+    } on DioException catch (e) {
+      throw Exception('Mercado Pago Error: ${e.response?.data['message'] ?? e.message}');
+    }
+  }
+
+  Future<String?> getPublicKey() async {
+      try {
+          final response = await _dio.get('/api/settings/1'); 
+          if (response.statusCode == 200 && response.data != null && response.data['data'] != null) {
+               return response.data['data']['mp_public_key'];
+          }
+          return null;
+      } catch(e) {
+          print("Error fetching mp key: $e");
+          return null;
+      }
+  }
 }
