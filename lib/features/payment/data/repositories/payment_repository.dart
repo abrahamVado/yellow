@@ -66,7 +66,9 @@ class PaymentRepository {
       try {
           final response = await _dio.get('/api/settings/1'); 
           if (response.statusCode == 200 && response.data != null && response.data['data'] != null) {
-               return response.data['data']['mp_public_key'];
+               final key = response.data['data']['mp_public_key'];
+               print("DEBUG: Using MP Public Key: $key");
+               return key;
           }
           return null;
       } catch(e) {
