@@ -5,11 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/repositories/payment_repository.dart';
 import '../../data/models/payment_method.dart';
 
-// Simple FutureProvider to fetch cards
-final paymentMethodsProvider = FutureProvider.autoDispose<List<PaymentMethod>>((ref) async {
-  final repo = ref.watch(paymentRepositoryProvider);
-  return repo.getPaymentMethods();
-});
+import '../providers/payment_provider.dart';
 
 class PaymentMethodsScreen extends ConsumerWidget {
   const PaymentMethodsScreen({super.key});

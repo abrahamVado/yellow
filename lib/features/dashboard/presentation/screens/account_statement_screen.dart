@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../app/theme/theme_provider.dart';
+import '../../../payment/presentation/providers/payment_provider.dart';
+import '../../../payment/data/models/payment_method.dart';
 
 class AccountStatementScreen extends ConsumerWidget {
   const AccountStatementScreen({super.key});
@@ -129,6 +131,98 @@ class AccountStatementScreen extends ConsumerWidget {
             ),
             
             const SizedBox(height: 40),
+            
+            // Saved Cards Section
+            const Text(
+              'Mis Tarjetas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            
+            SizedBox(
+              height: 80,
+              child: ref.watch(paymentMethodsProvider).when(
+                data: (methods) {
+                   if (methods.isEmpty) {
+                      return GestureDetector(
+                        onTap: () => context.push('/dashboard/add-card'),
+                        child: Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 16),
+                           decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                           ),
+                           child: const Row(
+                             children: [
+                               Icon(Icons.add, color: Colors.grey),
+                               SizedBox(width: 8),
+                               Text("Agregar tarjeta", style: TextStyle(color: Colors.grey)),
+                             ],
+                           ),
+                        ),
+                      );
+                   }
+                   return ListView.separated(
+                     scrollDirection: Axis.horizontal,
+                     itemCount: methods.length + 1, // +1 for Add button
+                     separatorBuilder: (_, __) => const SizedBox(width: 12),
+                     itemBuilder: (context, index) {
+                        if (index == methods.length) {
+                           // Add Button at end
+                           return GestureDetector(
+                            onTap: () => context.push('/dashboard/add-card'),
+                            child: Container(
+                               width: 60,
+                               decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(16),
+                               ),
+                               child: const Icon(Icons.add, color: Colors.grey),
+                            ),
+                           );
+                        }
+                        
+                        final method = methods[index];
+                        IconData iconData = FontAwesomeIcons.solidCreditCard;
+                        if (method.brand.toLowerCase().contains('visa')) iconData = FontAwesomeIcons.ccVisa;
+                        if (method.brand.toLowerCase().contains('master')) iconData = FontAwesomeIcons.ccMastercard;
+
+                        return Container(
+                          width: 200,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))
+                            ],
+                            border: method.isDefault ? Border.all(color: Colors.black, width: 1.5) : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(iconData, size: 24, color: Colors.black87),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                   Text(method.brand.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                   Text("•••• ${method.lastFour}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                ],
+                              )
+                            ],
+                          ),
+                        );
+                     },
+                   );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Text('Error: $e'),
+              ),
+            ),
+            
+            const SizedBox(height: 30),
             
             // Recent Transactions
             const Text(
