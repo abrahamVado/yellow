@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/payment_method.dart';
+import '../models/payment_transaction.dart';
 
 final paymentRepositoryProvider = Provider<PaymentRepository>((ref) {
   return PaymentRepository(ref.read(dioProvider));
@@ -43,6 +44,20 @@ class PaymentRepository {
       return [];
     } catch (e) {
       // Return empty list on error for now or rethrow
+      return [];
+    }
+  }
+
+  Future<List<PaymentTransaction>> getTransactions() async {
+    try {
+      final response = await _dio.get('/finance/transactions');
+      if (response.statusCode == 200 && response.data != null) {
+        final List<dynamic> list = response.data as List<dynamic>;
+        return list.map((e) => PaymentTransaction.fromJson(e)).toList();
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching transactions: $e");
       return [];
     }
   }

@@ -132,96 +132,6 @@ class AccountStatementScreen extends ConsumerWidget {
             
             const SizedBox(height: 40),
             
-            // Saved Cards Section
-            const Text(
-              'Mis Tarjetas',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            
-            SizedBox(
-              height: 80,
-              child: ref.watch(paymentMethodsProvider).when(
-                data: (methods) {
-                   if (methods.isEmpty) {
-                      return GestureDetector(
-                        onTap: () => context.push('/dashboard/add-card'),
-                        child: Container(
-                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                           decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
-                           ),
-                           child: const Row(
-                             children: [
-                               Icon(Icons.add, color: Colors.grey),
-                               SizedBox(width: 8),
-                               Text("Agregar tarjeta", style: TextStyle(color: Colors.grey)),
-                             ],
-                           ),
-                        ),
-                      );
-                   }
-                   return ListView.separated(
-                     scrollDirection: Axis.horizontal,
-                     itemCount: methods.length + 1, // +1 for Add button
-                     separatorBuilder: (_, __) => const SizedBox(width: 12),
-                     itemBuilder: (context, index) {
-                        if (index == methods.length) {
-                           // Add Button at end
-                           return GestureDetector(
-                            onTap: () => context.push('/dashboard/add-card'),
-                            child: Container(
-                               width: 60,
-                               decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(16),
-                               ),
-                               child: const Icon(Icons.add, color: Colors.grey),
-                            ),
-                           );
-                        }
-                        
-                        final method = methods[index];
-                        IconData iconData = FontAwesomeIcons.solidCreditCard;
-                        if (method.brand.toLowerCase().contains('visa')) iconData = FontAwesomeIcons.ccVisa;
-                        if (method.brand.toLowerCase().contains('master')) iconData = FontAwesomeIcons.ccMastercard;
-
-                        return Container(
-                          width: 200,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))
-                            ],
-                            border: method.isDefault ? Border.all(color: Colors.black, width: 1.5) : null,
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(iconData, size: 24, color: Colors.black87),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                   Text(method.brand.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                   Text("•••• ${method.lastFour}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                                ],
-                              )
-                            ],
-                          ),
-                        );
-                     },
-                   );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, s) => Text('Error: $e'),
-              ),
-            ),
-            
             const SizedBox(height: 30),
             
             // Recent Transactions
@@ -231,72 +141,84 @@ class AccountStatementScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             
-            ListView.separated(
-              itemCount: transactions.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final tx = transactions[index];
-                final isNegative = tx['isNegative'] as bool;
-                
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+            ref.watch(transactionsProvider).when(
+              data: (transactions) {
+                 if (transactions.isEmpty) return const Text("No hay movimientos recientes");
+                 return ListView.separated(
+                  itemCount: transactions.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final tx = transactions[index];
+                    final isNegative = tx.flow == 'outflow'; // Or logic based on 'type'
+                    final amount = tx.amount; // Should format currency
+                    
+                    IconData icon = FontAwesomeIcons.moneyBill;
+                    if (tx.type == 'trip_payment' || tx.type == 'payment') icon = FontAwesomeIcons.taxi;
+                    if (tx.type == 'topup') icon = FontAwesomeIcons.wallet;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isNegative ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          tx['icon'] as IconData,
-                          color: isNegative ? Colors.red : Colors.green,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tx['title'] as String,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isNegative ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              tx['date'] as String,
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                            child: Icon(
+                              icon,
+                              color: isNegative ? Colors.red : Colors.green,
+                              size: 20,
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tx.description.isNotEmpty ? tx.description : 'Movimiento',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "${tx.createdAt.day}/${tx.createdAt.month} ${tx.createdAt.hour}:${tx.createdAt.minute}",
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            "${isNegative ? '-' : '+'} \$${amount.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: isNegative ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        tx['amount'] as String,
-                        style: TextStyle(
-                          color: isNegative ? Colors.red : Colors.green,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => Text("Error: $e"),
             ),
           ],
         ),
