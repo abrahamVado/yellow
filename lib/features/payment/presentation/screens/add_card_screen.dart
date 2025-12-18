@@ -34,12 +34,10 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
 
   Future<void> _fetchSettings() async {
     try {
-        final dio = ref.read(dioProvider);
-        // Assuming app_id = 1 for now
-        final response = await dio.get('/api/settings/1'); 
-        if (response.statusCode == 200 && response.data['data'] != null) {
+        final key = await ref.read(paymentRepositoryProvider).getPublicKey();
+        if (mounted) {
             setState(() {
-                _mpPublicKey = response.data['data']['mp_public_key'];
+                _mpPublicKey = key;
             });
         }
     } catch(e) {
@@ -67,8 +65,16 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'No se pudo guardar la tarjeta. Intente nuevamente.';
+        
+        if (e.toString().contains('500') || e.toString().contains('internal server error')) {
+           errorMessage = 'Error con la tarjeta.';
+        } else if (e.toString().contains('Mercado Pago Error')) {
+           errorMessage = e.toString().replaceAll('Exception: Mercado Pago Error:', '');
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } finally {

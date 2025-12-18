@@ -161,8 +161,11 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
 
           // SCOPE SIGHT (Only in Manual Mode)
           if (taxiState.isManualSelectionMode)
-             const Center(
-               child: Icon(Icons.center_focus_strong, size: 40, color: Colors.black),
+             const Padding(
+               padding: EdgeInsets.only(bottom: 200),
+               child: Center(
+                 child: Icon(Icons.center_focus_strong, size: 40, color: Colors.black),
+               ),
              ),
 
           // CONFIRM BUTTON (Only in Manual Mode)

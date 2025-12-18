@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:yellow/app/theme/theme_provider.dart';
 import 'package:yellow/app/theme/app_theme.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
+import 'package:yellow/features/payment/data/repositories/payment_repository.dart'; // Direct import
 
 class TripTrackingScreen extends ConsumerWidget {
   final int tripId;
@@ -342,53 +343,49 @@ class TripTrackingScreen extends ConsumerWidget {
                         Icon(Icons.credit_card, size: 20, color: Colors.blue.shade800),
                         const SizedBox(width: 8),
                         Text(
-                          "Pagado con Tarjeta",
+                          "Procesando Pago...",
                           style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 16)
                         ),
                       ],
                     ),
                   )
-               else if ((tripData['payment_method']?.toString().toLowerCase() ?? '') == 'wallet')
-                  Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.purple.shade200),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.account_balance_wallet, size: 20, color: Colors.purple.shade800),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Pagado con Billetera",
-                          style: TextStyle(color: Colors.purple.shade800, fontWeight: FontWeight.bold, fontSize: 16)
+               else 
+                  // Allow trying card payment if cash/other
+                  Column(
+                    children: [
+                       Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.orange.shade200),
                         ),
-                      ],
-                    ),
-                  )
-               else // Default to Cash (Efectivo)
-                  Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.money_off, size: 20, color: Colors.orange.shade800),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Pago en Efectivo Pendiente",
-                          style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold, fontSize: 16)
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.money_off, size: 20, color: Colors.orange.shade800),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Pago en Efectivo / Pendiente",
+                              style: TextStyle(color: Colors.orange.shade800, fontWeight: FontWeight.bold, fontSize: 16)
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.credit_card),
+                        label: const Text("PAGAR AHORA (Directo)"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () => _payNow(context, ref, tripData),
+                      )
+                    ],
                   ),
 
                const SizedBox(height: 48),
@@ -589,5 +586,118 @@ class TripTrackingScreen extends ConsumerWidget {
          if (context.mounted)
            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al cancelar')));
       }
+  }
+  
+  // Direct Payment Logic
+  void _payNow(BuildContext context, WidgetRef ref, Map<String, dynamic> tripData) async {
+     // Show Dialog to collect card info
+     final cardController = TextEditingController();
+     final expController = TextEditingController(); // MM/YY
+     final cvvController = TextEditingController();
+     final nameController = TextEditingController();
+     
+     final shouldPay = await showDialog<bool>(
+       context: context,
+       builder: (ctx) => AlertDialog(
+         title: const Text("Pago Directo con Tarjeta"),
+         content: SingleChildScrollView(
+           child: Column(
+             mainAxisSize: MainAxisSize.min,
+             children: [
+               TextField(
+                 controller: nameController,
+                 decoration: const InputDecoration(labelText: "Titular de la Tarjeta", hintText: "Como aparece en la tarjeta"),
+               ),
+               const SizedBox(height: 12),
+               TextField(
+                 controller: cardController,
+                 decoration: const InputDecoration(labelText: "Número de Tarjeta", hintText: "0000 0000 0000 0000"),
+                 keyboardType: TextInputType.number,
+                 maxLength: 16,
+               ),
+               Row(
+                 children: [
+                   Expanded(
+                     child: TextField(
+                       controller: expController,
+                       decoration: const InputDecoration(labelText: "Expira", hintText: "MM/YY"),
+                       keyboardType: TextInputType.datetime,
+                     ),
+                   ),
+                   const SizedBox(width: 16),
+                   Expanded(
+                     child: TextField(
+                       controller: cvvController,
+                       decoration: const InputDecoration(labelText: "CVV", hintText: "123"),
+                       keyboardType: TextInputType.number,
+                       maxLength: 4, 
+                     ),
+                   ),
+                 ],
+               ),
+               const SizedBox(height: 20),
+               const Text("Se procesará el cobro directamente.", style: TextStyle(fontSize: 12, color: Colors.grey))
+             ],
+           ),
+         ),
+         actions: [
+           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
+           ElevatedButton(
+             onPressed: () => Navigator.pop(ctx, true),
+             child: const Text("Pagar"),
+           )
+         ],
+       ),
+     );
+     
+     if (shouldPay == true) {
+         try {
+             // Show Loading
+             showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+             
+             final repo = ref.read(paymentRepositoryProvider);
+             final publicKey = await repo.getPublicKey() ?? 'APP_USR-92c554d9-615c-436d-b342-fbbdf734e306'; // Fallback to provided key
+             
+             // Parse Expiry
+             final expParts = expController.text.split('/');
+             final month = expParts[0];
+             final year = (expParts.length > 1) ? "20${expParts[1]}" : "2025";
+             
+             // 1. Create Token
+             final token = await repo.createCardToken(
+                cardNumber: cardController.text.replaceAll(' ', ''),
+                cardholderName: nameController.text,
+                expirationMonth: month,
+                expirationYear: year,
+                securityCode: cvvController.text,
+                identificationType: "DNI", // Default
+                identificationNumber: "00000000", // Default dummy
+                publicKey: publicKey
+             );
+             
+             // 2. Process Payment
+             final amount = double.tryParse(tripData['fare']?.toString() ?? '0') ?? 0.0;
+             await repo.processPayment(
+               amount: amount,
+               token: token,
+               installments: 1,
+               paymentMethodId: "visa", // Simple heuristic or let user select
+               payerEmail: "test_user_123@test.com"
+             );
+             
+             if (context.mounted) {
+               Navigator.pop(context); // Close loading
+               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Pago Exitoso!"), backgroundColor: Colors.green));
+               // Ideally update trip status locally or via backend?
+               ref.invalidate(tripStatusStreamProvider(tripId));
+             }
+             
+         } catch (e) {
+             if (context.mounted) {
+               Navigator.pop(context); // Close loading
+               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+             }
+         }
+     }
   }
 }
