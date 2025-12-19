@@ -153,7 +153,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
-              padding: const EdgeInsets.only(bottom: 200), // Push Google Logo up
+              padding: EdgeInsets.zero, // Remove padding to fix center offset
               onCameraMove: (position) {
                 _currentCameraCenter = position.target;
               },
@@ -161,11 +161,8 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
 
           // SCOPE SIGHT (Only in Manual Mode)
           if (taxiState.isManualSelectionMode)
-             const Padding(
-               padding: EdgeInsets.only(bottom: 200),
-               child: Center(
-                 child: Icon(Icons.center_focus_strong, size: 40, color: Colors.black),
-               ),
+             const Center(
+               child: Icon(Icons.center_focus_strong, size: 40, color: Colors.black),
              ),
 
           // CONFIRM BUTTON (Only in Manual Mode)
