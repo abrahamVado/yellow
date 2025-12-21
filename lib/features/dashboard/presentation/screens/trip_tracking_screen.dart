@@ -687,8 +687,54 @@ class TripTrackingScreen extends ConsumerWidget {
              
              if (context.mounted) {
                Navigator.pop(context); // Close loading
-               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("¡Pago Exitoso!"), backgroundColor: Colors.green));
-               // Ideally update trip status locally or via backend?
+                
+               await showDialog(
+                 context: context,
+                 barrierDismissible: false,
+                 builder: (ctx) => AlertDialog(
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                   content: Column(
+                     mainAxisSize: MainAxisSize.min,
+                     children: [
+                       Container(
+                         padding: const EdgeInsets.all(16),
+                         decoration: BoxDecoration(
+                           color: Colors.green.shade50,
+                           shape: BoxShape.circle,
+                         ),
+                         child: Icon(Icons.check_circle, color: Colors.green.shade600, size: 60),
+                       ),
+                       const SizedBox(height: 24),
+                       const Text(
+                         "¡Pago Exitoso!",
+                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                         textAlign: TextAlign.center,
+                       ),
+                       const SizedBox(height: 8),
+                       const Text(
+                         "Tu pago ha sido procesado correctamente.",
+                         style: TextStyle(color: Colors.grey, fontSize: 16),
+                         textAlign: TextAlign.center,
+                       ),
+                       const SizedBox(height: 24),
+                       SizedBox(
+                         width: double.infinity,
+                         child: ElevatedButton(
+                           onPressed: () => Navigator.pop(ctx),
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: Colors.black,
+                             foregroundColor: Colors.white,
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                             padding: const EdgeInsets.symmetric(vertical: 16),
+                           ),
+                           child: const Text("Continuar", style: TextStyle(fontWeight: FontWeight.bold)),
+                         ),
+                       ),
+                     ],
+                   ),
+                 ),
+               );
+
                ref.invalidate(tripStatusStreamProvider(tripId));
              }
              
