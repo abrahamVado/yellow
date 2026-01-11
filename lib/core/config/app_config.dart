@@ -32,6 +32,9 @@ class AppConfig {
   // UI Constants
   static const double borderRadius = 16.0;
   static const double defaultPadding = 20.0;
+  
+  // Fees
+  static const double mercadoPagoFeePercentage = 0.04; // 4%
 }
 
 final appConfigProvider = Provider<AppConfig>((ref) {

@@ -22,6 +22,8 @@ class TaxiRequestState {
   final bool isOriginInputVisible;
   final bool isOriginFocused;
   final double estimatedFare;
+  final double feeAmount;
+  final double totalWithFee;
   final List<dynamic> myTrips;
   final String? errorMessage;
   final DateTime? scheduledTime;
@@ -42,6 +44,8 @@ class TaxiRequestState {
     this.isOriginFocused = true,
     this.isOriginInputVisible = false,
     this.estimatedFare = 0.0,
+    this.feeAmount = 0.0,
+    this.totalWithFee = 0.0,
     this.myTrips = const [],
     this.errorMessage,
     this.scheduledTime,
@@ -63,6 +67,8 @@ class TaxiRequestState {
     bool? isOriginFocused,
     bool? isOriginInputVisible,
     double? estimatedFare,
+    double? feeAmount,
+    double? totalWithFee,
     List<dynamic>? myTrips,
     String? errorMessage,
     DateTime? scheduledTime,
@@ -83,6 +89,8 @@ class TaxiRequestState {
       isOriginFocused: isOriginFocused ?? this.isOriginFocused,
       isOriginInputVisible: isOriginInputVisible ?? this.isOriginInputVisible,
       estimatedFare: estimatedFare ?? this.estimatedFare,
+      feeAmount: feeAmount ?? this.feeAmount,
+      totalWithFee: totalWithFee ?? this.totalWithFee,
       myTrips: myTrips ?? this.myTrips,
       errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
       scheduledTime: scheduledTime ?? this.scheduledTime,
@@ -342,8 +350,20 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
           price = double.parse(price.toStringAsFixed(2));
       }
 
-      print('Route Calculated: $routeInfo, Price: $price'); // DEBUG LOG
-      state = state.copyWith(routeInfo: routeInfo, estimatedFare: price, isLoading: false);
+
+
+      // Calculate Fee
+      final fee = price * AppConfig.mercadoPagoFeePercentage;
+      final total = price + fee;
+
+      print('Route Calculated: $routeInfo, Price: $price, Fee: $fee, Total: $total'); // DEBUG LOG
+      state = state.copyWith(
+          routeInfo: routeInfo, 
+          estimatedFare: price, 
+          feeAmount: double.parse(fee.toStringAsFixed(2)),
+          totalWithFee: double.parse(total.toStringAsFixed(2)),
+          isLoading: false
+      );
   }
 
   Future<void> useMyLocation() async {

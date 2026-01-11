@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Código enviado! Revisa tus SMS.')),
+          const SnackBar(content: Text('¡Código enviado! Revisa tu WhatsApp o SMS.')),
         );
       }
     }
