@@ -48,3 +48,6 @@ google-services.json
 android/app/google-services.json
 local.properties
 key.properties
+
+.env
+ios/Runner/GoogleService-Info.plist
