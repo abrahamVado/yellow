@@ -88,7 +88,7 @@ class VerifyCodeScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Ingresa el código enviado a\n$phone',
+                          'Ingresa el código enviado a tu WhatsApp/SMS\n$phone',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.grey[600], fontSize: 15),
                         ),
