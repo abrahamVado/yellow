@@ -322,17 +322,34 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
              // We use POST /trips/calculate which uses the Admin Pricing Handler we reused.
              // Wait, the route in flutter.go is inside tripsGroup which is /trips. So /trips/calculate.
              
+             // We explicitly ask for 'card' pricing to get the potential fee breakdown for display
              final response = await _dio.post('/trips/calculate', data: {
                  'distance_km': distKm,
+                 'payment_method': 'card', 
                  // 'is_night': false // Optional, backend handles it or defaults. 
-                 // Ideally we send isNight based on simple logic if we want to show it now
              });
              
              if (response.statusCode == 200 && response.data['status'] == 'success') {
-                 // Response structure: { status: success, data: { total_amount: ..., ... } }
+                 // Response structure: { status: success, data: { total_amount: ..., payment_fee: ..., base_fare: ... } }
                  final data = response.data['data'];
-                 price = (data['total_amount'] as num).toDouble();
-                 print('V2 Price Calculated: $price');
+                 final totalAmount = (data['total_amount'] as num).toDouble();
+                 final paymentFee = (data['payment_fee'] as num).toDouble();
+                 
+                 // We want estimatedFare to be the "base" (without fee) for the breakdown display
+                 // If the backend total includes fee, then base = total - fee.
+                 // (Backend: Total = Base + Distance + AppFee + PaymentFee)
+                 price = totalAmount - paymentFee;
+                 
+                  state = state.copyWith(
+                      routeInfo: routeInfo, 
+                      estimatedFare: double.parse(price.toStringAsFixed(2)), 
+                      feeAmount: double.parse(paymentFee.toStringAsFixed(2)),
+                      totalWithFee: double.parse(totalAmount.toStringAsFixed(2)),
+                      isLoading: false
+                  );
+                  print('V2 Price Calculated: Base: $price, Fee: $paymentFee, Total: $totalAmount');
+                  return;
+
              } else {
                  print('V2 Price Calc Failed: ${response.statusCode}');
                  // Fallback to legacy if API fails?
@@ -351,12 +368,13 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       }
 
 
-
-      // Calculate Fee
-      final fee = price * AppConfig.mercadoPagoFeePercentage;
+      // Fallback Fee Calculation (only if API failed)
+      // If we are here, it means API failed or we are in fallback block.
+      // We calculate fee locally for consistency in fallback mode.
+      final fee = price * 0.06; // Estimated 6% if API fails
       final total = price + fee;
 
-      print('Route Calculated: $routeInfo, Price: $price, Fee: $fee, Total: $total'); // DEBUG LOG
+      print('Route Calculated (Fallback): $routeInfo, Price: $price, Fee: $fee, Total: $total'); // DEBUG LOG
       state = state.copyWith(
           routeInfo: routeInfo, 
           estimatedFare: price, 

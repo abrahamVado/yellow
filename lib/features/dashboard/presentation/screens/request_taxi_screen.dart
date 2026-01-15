@@ -466,7 +466,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                                      const Icon(Icons.info_outline, size: 12, color: Colors.grey),
                                      const SizedBox(width: 4),
                                      Text(
-                                       "+ \$${taxiState.feeAmount} (MP 4%)", 
+                                       "+ \$${taxiState.feeAmount} (Mercado Pago)", 
                                        style: const TextStyle(fontSize: 12, color: Colors.grey)
                                      ),
                                  ],
