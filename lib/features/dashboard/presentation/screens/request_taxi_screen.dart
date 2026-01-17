@@ -773,19 +773,11 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                id: 'CASH',
                icon: Icons.money_off,
                title: 'Efectivo',
-               subtitle: 'Paga al conductor directamente',
+               subtitle: 'Precio Base: \$${taxiState.estimatedFare.toStringAsFixed(2)}',
              ),
              const SizedBox(height: 16),
              
-             // Wallet (Disabled for now)
-             _buildOption(
-               id: 'WALLET',
-               icon: Icons.account_balance_wallet,
-               title: 'Billetera',
-               subtitle: 'Saldo disponible: \$0.00',
-               isDisabled: true, 
-             ),
-             const SizedBox(height: 24),
+             // Wallet REMOVED per requirement
              
              const Text("Mis Tarjetas", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey)),
              const SizedBox(height: 12),
@@ -796,10 +788,13 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
              ...paymentMethods.map((pm) {
                  final brand = pm['brand']?.toString().toUpperCase() ?? 'TARJETA';
                  final last4 = pm['last_four'] ?? pm['card_number']?.toString().substring(pm['card_number'].toString().length - 4) ?? '****';
-                 // Use a composite ID or just check equality if we store object
                  final cardId = pm['id'];
-                 // We use 'card:$id' as the unique ID for selection logic in this sheet
                  final selectionId = 'card:$cardId'; 
+                 
+                 // Calculate Card Price Breakdown
+                 final base = taxiState.estimatedFare;
+                 final fee = base * 0.06;
+                 final total = base + fee;
                  
                  return Padding(
                    padding: const EdgeInsets.only(bottom: 12.0),
@@ -807,8 +802,7 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                      id: selectionId,
                      icon: Icons.credit_card,
                      title: '$brand  •••• $last4',
-                     subtitle: pm['card_holder_name'] ?? 'Personal',
-                     // If this matches, we are selecting 'card' method with this ID
+                     subtitle: 'Total: \$${total.toStringAsFixed(2)}\n(Base: \$${base.toStringAsFixed(2)} + 6% MP)',
                    ),
                  );
              }).toList(),
