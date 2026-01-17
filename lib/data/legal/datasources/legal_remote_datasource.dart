@@ -6,12 +6,12 @@ class LegalRemoteDataSource {
   LegalRemoteDataSource({required this.dio});
 
   Future<String> getTerms() async {
-    final response = await dio.get<Map<String, dynamic>>('/legal/terms');
+    final response = await dio.get<Map<String, dynamic>>('/auth/legal/terms');
     return response.data?['content'] as String? ?? '';
   }
 
   Future<String> getPrivacyPolicy() async {
-    final response = await dio.get<Map<String, dynamic>>('/legal/privacy');
+    final response = await dio.get<Map<String, dynamic>>('/auth/legal/privacy');
     return response.data?['content'] as String? ?? '';
   }
 }
