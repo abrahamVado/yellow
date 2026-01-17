@@ -371,8 +371,8 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
       // Fallback Fee Calculation (only if API failed)
       // If we are here, it means API failed or we are in fallback block.
       // We calculate fee locally for consistency in fallback mode.
-      final fee = price * 0.06; // Estimated 6% if API fails
-      final total = price + fee;
+      final fee = 0.0; // Fee removed per requirement
+      final total = price;
 
       print('Route Calculated (Fallback): $routeInfo, Price: $price, Fee: $fee, Total: $total'); // DEBUG LOG
       state = state.copyWith(

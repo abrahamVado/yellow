@@ -458,22 +458,6 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                            children: [
                                Text(
                                  "\$${taxiState.estimatedFare}", 
-                                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)
-                               ),
-                               Row(
-                                 mainAxisSize: MainAxisSize.min,
-                                 children: [
-                                     const Icon(Icons.info_outline, size: 12, color: Colors.grey),
-                                     const SizedBox(width: 4),
-                                     Text(
-                                       "+ \$${taxiState.feeAmount} (Mercado Pago)", 
-                                       style: const TextStyle(fontSize: 12, color: Colors.grey)
-                                     ),
-                                 ],
-                               ),
-                               const SizedBox(height: 4),
-                               Text(
-                                 "\$${taxiState.totalWithFee}", 
                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green)
                                ),
                                const Text("Total Estimado", style: TextStyle(fontSize: 10, color: Colors.grey)),
