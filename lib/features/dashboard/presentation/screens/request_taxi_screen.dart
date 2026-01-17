@@ -773,7 +773,9 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                id: 'CASH',
                icon: Icons.money_off,
                title: 'Efectivo',
-               subtitle: 'Precio Base: \$${taxiState.estimatedFare.toStringAsFixed(2)}',
+               subtitle: 'Pago directo',
+               price: '\$${taxiState.estimatedFare.toStringAsFixed(2)}',
+               priceLabel: 'Precio Base',
              ),
              const SizedBox(height: 16),
              
@@ -802,7 +804,9 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                      id: selectionId,
                      icon: Icons.credit_card,
                      title: '$brand  •••• $last4',
-                     subtitle: 'Total: \$${total.toStringAsFixed(2)}\n(Base: \$${base.toStringAsFixed(2)} + 6% MP)',
+                     subtitle: pm['card_holder_name'] ?? 'Personal',
+                     price: '\$${total.toStringAsFixed(2)}',
+                     priceLabel: 'Base: \$${base.toStringAsFixed(2)} + 6%',
                    ),
                  );
              }).toList(),
@@ -881,15 +885,14 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
     required IconData icon, 
     required String title, 
     String? subtitle, 
+    String? price,
+    String? priceLabel,
     bool isPremium = false,
     bool isDisabled = false,
     VoidCallback? onTapOverride,
   }) {
     final isSelected = selectedMethod == id;
     
-    // Auto-select card if it was tapped effectively
-    // But logic calls setState anyway.
-
     return GestureDetector(
       onTap: isDisabled ? null : (onTapOverride ?? () => setState(() => selectedMethod = id)),
       child: Opacity(
@@ -914,7 +917,7 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                  ),
                  child: Icon(icon, color: isSelected ? Colors.white : Colors.black, size: 24),
                ),
-               const SizedBox(width: 16),
+               const SizedBox(width: 12),
                Expanded(
                  child: Column(
                    crossAxisAlignment: CrossAxisAlignment.start,
@@ -925,8 +928,20 @@ class _PaymentSelectionSheetState extends ConsumerState<_PaymentSelectionSheet> 
                    ],
                  ),
                ),
-               if (isSelected)
+               if (price != null)
+                 Column(
+                   crossAxisAlignment: CrossAxisAlignment.end,
+                   children: [
+                      Text(price, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.blueAccent)),
+                      if (priceLabel != null)
+                         Text(priceLabel, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                   ],
+                 ),
+               
+               if (isSelected) ...[
+                 const SizedBox(width: 12),
                  const Icon(Icons.check_circle, color: Colors.black),
+               ]
             ],
           ),
         ),
