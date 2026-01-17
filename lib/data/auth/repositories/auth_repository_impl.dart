@@ -182,10 +182,30 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> updateFCMToken(String token) async {
     try {
+      if (token.isEmpty) return;
       await remote.updateFCMToken(token);
     } catch (e) {
-      // Log error but don't crash app for token update failure
-      print("Failed to update FCM token: $e");
+      // Ignored for now
+    }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    try {
+      await remote.deleteAccount();
+      // Clear local storage after successful deletion
+      await tokenStorage.clear();
+    } catch (e, stackTrace) {
+      throw errorMapper.map(e, stackTrace);
+    }
+  }
+
+  @override
+  Future<void> updateProfile({String? firstName, String? lastName, String? email}) async {
+    try {
+      await remote.updateProfile(firstName: firstName, lastName: lastName, email: email);
+    } catch (e, stackTrace) {
+      throw errorMapper.map(e, stackTrace);
     }
   }
 }

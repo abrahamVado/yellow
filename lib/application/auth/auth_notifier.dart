@@ -226,4 +226,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
       print('Failed to fetch profile: $e');
     }
   }
+
+  Future<void> deleteAccount() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.deleteAccount();
+      // Also cleanup FCM and local state same as logout
+      await _fcmService.deleteToken();
+      state = AuthState.initial();
+    } catch (error) {
+       state = state.copyWith(
+        isLoading: false,
+        errorMessage: error.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> updateProfile({String? firstName, String? lastName, String? email}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.updateProfile(firstName: firstName, lastName: lastName, email: email);
+      // Refresh profile to update UI
+      await fetchProfile();
+      state = state.copyWith(isLoading: false);
+    } catch (error) {
+       state = state.copyWith(
+        isLoading: false,
+        errorMessage: error.toString(),
+      );
+      rethrow;
+    }
+  }
 }

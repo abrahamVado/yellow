@@ -74,7 +74,7 @@ Future<void> main() async {
   // Load Environment variables
   final env = await Env.load();
   final appConfig = AppConfig(env: env);
-
+  
   // Set the background messaging handler early on, as a named top-level function
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 

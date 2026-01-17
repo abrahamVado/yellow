@@ -47,54 +47,70 @@ class AppDrawer extends ConsumerWidget {
                   */
                   
                   // Example: Profile Edit (Placeholder for future)
+                  // 1. Mi Perfil
                   _buildModernMenuItem(
                     context,
-                    icon: FontAwesomeIcons.userPen,
-                    title: 'Editar Perfil',
+                    icon: FontAwesomeIcons.user,
+                    title: 'Mi Perfil',
                     onTap: () {
-                      // TODO: Navigate to Edit Profile
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Próximamente...')));
+                       if (Navigator.canPop(context)) context.pop();
+                       context.push('/dashboard/edit-profile');
                     },
                   ),
+                  const SizedBox(height: 8),
 
-                   // Example: Settings
-                  _buildModernMenuItem(
-                    context,
-                    icon: FontAwesomeIcons.gear,
-                    title: 'Configuraciones',
-                    onTap: () {
-                       Navigator.pop(context);
-                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Próximamente...')));
-                    },
-                  ),
-                  
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Divider(height: 1),
-                  ),
-
-                  _buildModernMenuItem(
+                  // 2. Métodos de Pago
+                   _buildModernMenuItem(
                     context,
                     icon: FontAwesomeIcons.creditCard,
                     title: 'Métodos de Pago',
                     onTap: () {
-                      Navigator.pop(context); // Close Drawer
-                      context.push('/dashboard/add-card');
+                       if (Navigator.canPop(context)) context.pop();
+                       context.push('/dashboard/payment-methods');
                     },
                   ),
+                  const SizedBox(height: 8),
 
+                  // 3. Política de Privacidad
                   _buildModernMenuItem(
                     context,
-                    icon: FontAwesomeIcons.arrowRightFromBracket,
+                    icon: FontAwesomeIcons.shieldHalved,
+                    title: 'Política de Privacidad',
+                    onTap: () {
+                       if (Navigator.canPop(context)) context.pop();
+                       context.push('/dashboard/privacy-policy');
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                   // 4. Borrar Mi Cuenta
+                  _buildModernMenuItem(
+                    context,
+                    icon: FontAwesomeIcons.trash,
+                    title: 'Borrar Mi Cuenta',
+                    isDestructive: true,
+                    onTap: () {
+                       if (Navigator.canPop(context)) context.pop();
+                       context.push('/dashboard/delete-account');
+                    },
+                  ),
+                  const SizedBox(height: 48),
+
+                  const Divider(height: 32),
+
+                  // 5. Cerrar Sesión
+                  _buildModernMenuItem(
+                    context,
+                    icon: FontAwesomeIcons.rightFromBracket,
                     title: 'Cerrar Sesión',
+                    isDestructive: true,
                     onTap: () async {
-                      await ref.read(authNotifierProvider.notifier).logout();
+                      if (Navigator.canPop(context)) context.pop();
+                      await ref.read(authNotifierProvider.notifier).logout(); 
                       if (context.mounted) {
                         context.go('/welcome');
                       }
                     },
-                    isDestructive: true,
                   ),
                 ] else ...[
                   _buildModernMenuItem(

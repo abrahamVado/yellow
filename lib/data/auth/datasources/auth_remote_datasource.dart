@@ -119,4 +119,17 @@ class AuthRemoteDataSource {
   Future<void> updateFCMToken(String token) async {
     await dio.post('/auth/fcm-token', data: {'fcm_token': token});
   }
+
+  Future<void> deleteAccount() async {
+    await dio.delete('/auth/me');
+  }
+
+  Future<void> updateProfile({String? firstName, String? lastName, String? email}) async {
+    final data = <String, dynamic>{};
+    if (firstName != null) data['first_name'] = firstName;
+    if (lastName != null) data['last_name'] = lastName;
+    if (email != null) data['email'] = email;
+    
+    await dio.put('/auth/me', data: data);
+  }
 }

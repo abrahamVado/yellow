@@ -14,6 +14,9 @@ import '../features/dashboard/presentation/screens/account_statement_screen.dart
 import '../features/dashboard/presentation/screens/trip_tracking_screen.dart';
 import '../features/payment/presentation/screens/add_card_screen.dart';
 import '../features/payment/presentation/screens/payment_methods_screen.dart';
+import '../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../features/settings/presentation/screens/delete_account_screen.dart';
+import '../features/settings/presentation/screens/privacy_policy_screen.dart';
 
 
 
@@ -128,6 +131,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'add-card',
             builder: (context, state) => const AddCardScreen(),
+          ),
+           GoRoute(
+            path: 'edit-profile',
+            builder: (context, state) => const EditProfileScreen(),
+          ),
+           GoRoute(
+            path: 'delete-account',
+            builder: (context, state) => const DeleteAccountScreen(),
+          ),
+           GoRoute(
+            path: 'privacy-policy',
+            builder: (context, state) => const PrivacyPolicyScreen(),
           ),
         ],
       ),

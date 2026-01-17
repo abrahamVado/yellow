@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../application/auth/auth_providers.dart';
 import '../../../../app/theme/theme_provider.dart';
 import '../../../../core/config/env.dart';
@@ -32,20 +31,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleGoogleLogin() async {
-    final googleSignIn = GoogleSignIn();
-    await ref.read(authNotifierProvider.notifier).loginWithGoogle(() async {
-      try {
-        final account = await googleSignIn.signIn();
-        if (account == null) return null; // Aborted
-        final auth = await account.authentication;
-        return auth.idToken;
-      } catch (e) {
-        debugPrint("Google Sign In Error: $e");
-        return null;
-      }
-    });
-  }
 
   Future<void> _sendCode() async {
     final phone = _phoneController.text.trim();
@@ -412,36 +397,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
 
-                              // Google Sign In Button
-                              if (!_isCodeSent) ...[
-                                const SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Expanded(child: Divider(color: Colors.grey.shade300)),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      child: Text("O", style: TextStyle(color: Colors.grey.shade500)),
-                                    ),
-                                    Expanded(child: Divider(color: Colors.grey.shade300)),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                OutlinedButton.icon(
-                                  onPressed: _handleGoogleLogin,
-                                  icon: const Icon(FontAwesomeIcons.google, size: 20, color: Colors.black),
-                                  label: const Text("Continuar con Google", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(vertical: 18),
-                                    side: BorderSide(color: Colors.grey.shade300),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                ),
                               ],
-                            ],
-                          ),
+                            ),
+
                       ],
                     ),
                   ),

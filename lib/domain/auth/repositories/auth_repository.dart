@@ -47,4 +47,6 @@ abstract class AuthRepository {
   /// Fetch current user profile from backend.
   Future<User> getProfile();
   Future<void> updateFCMToken(String token);
+  Future<void> deleteAccount();
+  Future<void> updateProfile({String? firstName, String? lastName, String? email});
 }
