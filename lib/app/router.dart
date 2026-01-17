@@ -16,7 +16,9 @@ import '../features/payment/presentation/screens/add_card_screen.dart';
 import '../features/payment/presentation/screens/payment_methods_screen.dart';
 import '../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../features/settings/presentation/screens/delete_account_screen.dart';
+
 import '../features/settings/presentation/screens/privacy_policy_screen.dart';
+import '../features/settings/presentation/screens/terms_screen.dart';
 
 
 
@@ -143,6 +145,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
            GoRoute(
             path: 'privacy-policy',
             builder: (context, state) => const PrivacyPolicyScreen(),
+          ),
+           GoRoute(
+            path: 'terms',
+            builder: (context, state) => const TermsScreen(),
           ),
         ],
       ),

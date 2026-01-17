@@ -3,21 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/theme_provider.dart';
 import '../../../../application/legal/legal_providers.dart';
 
-class PrivacyPolicyScreen extends ConsumerWidget {
-  const PrivacyPolicyScreen({super.key});
+class TermsScreen extends ConsumerWidget {
+  const TermsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeConfig = ref.watch(themeConfigProvider);
-    final privacyPolicyAsync = ref.watch(privacyPolicyProvider);
+    final termsAsync = ref.watch(termsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Política de Privacidad'),
+        title: const Text('Términos y Condiciones'),
         backgroundColor: themeConfig.primaryColor,
         foregroundColor: Colors.white,
       ),
-      body: privacyPolicyAsync.when(
+      body: termsAsync.when(
         data: (content) {
           if (content.isEmpty) {
             return const Center(child: Text('No hay información disponible.'));

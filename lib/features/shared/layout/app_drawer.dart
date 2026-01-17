@@ -71,7 +71,19 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // 3. Política de Privacidad
+                   // 3. Términos y Condiciones
+                  _buildModernMenuItem(
+                    context,
+                    icon: FontAwesomeIcons.fileContract,
+                    title: 'Términos y Condiciones',
+                    onTap: () {
+                       if (Navigator.canPop(context)) context.pop();
+                       context.push('/dashboard/terms');
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
+                  // 4. Política de Privacidad
                   _buildModernMenuItem(
                     context,
                     icon: FontAwesomeIcons.shieldHalved,
@@ -83,7 +95,7 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
 
-                   // 4. Borrar Mi Cuenta
+                  // 5. Borrar Mi Cuenta
                   _buildModernMenuItem(
                     context,
                     icon: FontAwesomeIcons.trash,
@@ -98,7 +110,7 @@ class AppDrawer extends ConsumerWidget {
 
                   const Divider(height: 32),
 
-                  // 5. Cerrar Sesión
+                  // 6. Cerrar Sesión
                   _buildModernMenuItem(
                     context,
                     icon: FontAwesomeIcons.rightFromBracket,
