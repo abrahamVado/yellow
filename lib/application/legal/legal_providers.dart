@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/network/dio_provider.dart';
+import '../../core/network/dio_client.dart';
 import '../../data/legal/datasources/legal_remote_datasource.dart';
 import '../../data/legal/repositories/legal_repository_impl.dart';
 import '../../domain/legal/repositories/legal_repository.dart';
