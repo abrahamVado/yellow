@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../application/auth/auth_providers.dart';
+import '../core/utils/go_router_refresh_stream.dart';
 
 import '../features/auth/presentation/screens/splash_screen.dart';
 import '../features/auth/presentation/screens/welcome_screen.dart';
@@ -23,8 +25,35 @@ import '../features/settings/presentation/screens/terms_screen.dart';
 
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final authNotifier = ref.watch(authNotifierProvider.notifier);
+
   return GoRouter(
     initialLocation: '/splash',
+    refreshListenable: GoRouterRefreshStream(authNotifier.stream),
+    redirect: (context, state) {
+      final authState = ref.read(authNotifierProvider);
+      final isAuthenticated = authState.isAuthenticated;
+      
+      final isLoginRoute = state.uri.path == '/login';
+      final isRegisterRoute = state.uri.path == '/register';
+      final isWelcomeRoute = state.uri.path == '/welcome';
+      final isSplashRoute = state.uri.path == '/splash';
+      final isVerifyRoute = state.uri.path == '/verify-code';
+
+      final isAuthRoute = isLoginRoute || isRegisterRoute || isWelcomeRoute || isSplashRoute || isVerifyRoute;
+
+      // If not authenticated and trying to access a protected route
+      if (!isAuthenticated && !isAuthRoute) {
+        return '/welcome';
+      }
+
+      // If authenticated and trying to access an auth route (except splash which handles initialization)
+      if (isAuthenticated && isAuthRoute && !isSplashRoute) {
+         return '/dashboard'; 
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/splash',
