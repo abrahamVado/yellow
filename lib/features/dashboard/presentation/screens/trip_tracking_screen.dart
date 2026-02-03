@@ -9,6 +9,7 @@ import 'package:yellow/app/theme/theme_provider.dart';
 import 'package:yellow/app/theme/app_theme.dart';
 import 'package:yellow/features/dashboard/presentation/providers/taxi_request_provider.dart';
 import 'package:yellow/features/payment/data/repositories/payment_repository.dart'; // Direct import
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class TripTrackingScreen extends ConsumerWidget {
   final int tripId;
@@ -82,6 +83,7 @@ class TripTrackingScreen extends ConsumerWidget {
       case 'pending':
         return 'Buscando Conductor...';
       case 'matched': return 'Conductor En Camino';
+      case 'arrived': return 'Conductor Llegó';
       case 'in_progress': 
       case 'picked_up':
         return 'Viaje en Curso';
@@ -150,19 +152,10 @@ class TripTrackingScreen extends ConsumerWidget {
        );
     }
 
-    if (status == 'matched' || status == 'in_progress' || status == 'picked_up') {
+    if (status == 'matched' || status == 'in_progress' || status == 'picked_up' || status == 'arrived') {
        return Stack(
          children: [
-            GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(tripData['origin_lat'], tripData['origin_lng']),
-                zoom: 15,
-              ),
-              markers: _getMarkers(tripData, status),
-              myLocationEnabled: true,
-              zoomControlsEnabled: false,
-              padding: const EdgeInsets.only(top: 100, bottom: 250),
-            ),
+            TripMap(tripData: tripData, status: status),
             
             // Driver Card (Bottom Sheet Style)
             if (tripData['driver'] != null)
@@ -233,8 +226,8 @@ class TripTrackingScreen extends ConsumerWidget {
                       ),
 
                       const SizedBox(height: 16),
-                      // Safety Code / OTP Display - Only show if matched (before pickup)
-                      if (status == 'matched')
+                      // Safety Code / OTP Display - Show in matched AND arrived states
+                      if (status == 'matched' || status == 'arrived')
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
@@ -248,7 +241,7 @@ class TripTrackingScreen extends ConsumerWidget {
                             const Icon(Icons.shield, color: Colors.orange, size: 20),
                             const SizedBox(width: 8),
                             Text(
-                              "Código de seguridad: ${tripData['otp'] ?? tripId.toString().padLeft(4, '0')}",
+                              "Código de seguridad: ${tripData['otp'] ?? tripData['id'].toString().padLeft(4, '0')}", // Fixed tripId missing
                               style: const TextStyle(
                                 fontSize: 18, 
                                 fontWeight: FontWeight.bold, 
@@ -279,7 +272,8 @@ class TripTrackingScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  status == 'matched' ? 'El conductor está en camino' : 'Rumbo a tu destino',
+                                  status == 'matched' ? 'El conductor está en camino' : 
+                                  status == 'arrived' ? '¡Tu conductor ha llegado!' : 'Rumbo a tu destino',
                                   style: const TextStyle(fontWeight: FontWeight.w600),
                                 ),
                               ],
@@ -518,6 +512,8 @@ class TripTrackingScreen extends ConsumerWidget {
           child: FadeTransition(
             opacity: anim1,
             child: AlertDialog(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               contentPadding: const EdgeInsets.all(24),
               content: Column(
@@ -692,6 +688,8 @@ class TripTrackingScreen extends ConsumerWidget {
                  context: context,
                  barrierDismissible: false,
                  builder: (ctx) => AlertDialog(
+                   backgroundColor: Colors.white,
+                   surfaceTintColor: Colors.white,
                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                    content: Column(
                      mainAxisSize: MainAxisSize.min,
@@ -745,5 +743,167 @@ class TripTrackingScreen extends ConsumerWidget {
              }
          }
      }
+  }
+}
+
+class TripMap extends ConsumerStatefulWidget {
+  final Map<String, dynamic> tripData;
+  final String status;
+
+  const TripMap({super.key, required this.tripData, required this.status});
+
+  @override
+  ConsumerState<TripMap> createState() => _TripMapState();
+}
+
+class _TripMapState extends ConsumerState<TripMap> {
+  final Completer<GoogleMapController> _controller = Completer();
+  Set<Polyline> _polylines = {};
+  late PolylinePoints _polylinePoints;
+  List<LatLng> _polylineCoordinates = [];
+  String? _lastStatus;
+  
+  @override
+  void initState() {
+    super.initState();
+    _polylinePoints = PolylinePoints();
+  }
+
+  @override
+  void didUpdateWidget(TripMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.status != oldWidget.status) {
+      _fetchRoute();
+    }
+  }
+
+  Future<void> _fetchRoute() async {
+    try {
+      final tripData = widget.tripData;
+      LatLng? start, end;
+
+      // Determine Start/End based on status
+      if (widget.status == 'matched' || widget.status == 'arrived') {
+        // From Driver to Origin
+        final dLat = (tripData['driver']?['current_location_lat'] as num?)?.toDouble();
+        final dLng = (tripData['driver']?['current_location_lng'] as num?)?.toDouble();
+        
+        if (dLat != null && dLng != null && (dLat != 0 || dLng != 0)) {
+           start = LatLng(dLat, dLng);
+           end = LatLng(tripData['origin_lat'], tripData['origin_lng']);
+        }
+      } else if (widget.status == 'picked_up' || widget.status == 'in_progress') {
+         // From Driver to Dest (fallback to Origin if driver loc missing/zero)
+         final dLat = (tripData['driver']?['current_location_lat'] as num?)?.toDouble();
+         final dLng = (tripData['driver']?['current_location_lng'] as num?)?.toDouble();
+
+         if (dLat != null && dLng != null && (dLat != 0 || dLng != 0)) {
+            start = LatLng(dLat, dLng);
+         } else {
+            start = LatLng(tripData['origin_lat'], tripData['origin_lng']);
+         }
+
+         if (tripData['dest_lat'] != null && tripData['dest_lng'] != null) {
+            end = LatLng(tripData['dest_lat'], tripData['dest_lng']);
+         }
+      }
+
+      if (start != null && end != null) {
+         final apiKey = ref.read(appConfigProvider).env.googleMapsApiKey;
+         PolylineResult result = await _polylinePoints.getRouteBetweenCoordinates(
+          googleApiKey: apiKey,
+          request: PolylineRequest(
+            origin: PointLatLng(start.latitude, start.longitude),
+            destination: PointLatLng(end.latitude, end.longitude),
+            mode: TravelMode.driving,
+          ),
+        );
+
+        if (result.points.isNotEmpty) {
+          setState(() {
+            _polylineCoordinates.clear();
+            for (var point in result.points) {
+              _polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+            }
+            _polylines = {
+              Polyline(
+                polylineId: const PolylineId("route"),
+                color: Colors.blueAccent,
+                points: _polylineCoordinates,
+                width: 5,
+              ),
+            };
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching polyline: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_polylines.isEmpty && _polylineCoordinates.isEmpty) {
+       // Try fetch once on first build or if missing
+       _fetchRoute();
+    }
+
+    return GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: LatLng(widget.tripData['origin_lat'], widget.tripData['origin_lng']),
+        zoom: 15,
+      ),
+      markers: _getMarkers(),
+      polylines: _polylines,
+      myLocationEnabled: true,
+      zoomControlsEnabled: false,
+      padding: const EdgeInsets.only(top: 100, bottom: 250),
+      onMapCreated: (GoogleMapController controller) {
+        _controller.complete(controller);
+      },
+    );
+  }
+
+  Set<Marker> _getMarkers() {
+    Set<Marker> markers = {};
+    final tripData = widget.tripData;
+    final status = widget.status;
+
+    // Origin Marker
+    markers.add(Marker(
+      markerId: const MarkerId('origin'),
+      position: LatLng(tripData['origin_lat'], tripData['origin_lng']),
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      infoWindow: const InfoWindow(title: "Punto de Encuentro"),
+    ));
+
+    // Destination Marker
+    if (tripData['dest_lat'] != null && tripData['dest_lng'] != null) {
+      markers.add(Marker(
+        markerId: const MarkerId('destination'),
+        position: LatLng(tripData['dest_lat'], tripData['dest_lng']),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        infoWindow: const InfoWindow(title: "Destino"),
+      ));
+    }
+
+    // Driver Marker
+    if ((status == 'matched' || status == 'arrived' || status == 'picked_up' || status == 'in_progress') && tripData['driver'] != null) {
+       final driver = tripData['driver'];
+       if (driver['current_location_lat'] != null && driver['current_location_lng'] != null) {
+          markers.add(Marker(
+            markerId: const MarkerId('driver'),
+            position: LatLng(
+                (driver['current_location_lat'] as num).toDouble(),
+                (driver['current_location_lng'] as num).toDouble()
+            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow), 
+            rotation: 0, // Could add heading if available
+            infoWindow: InfoWindow(title: "${driver['first_name']} ${driver['last_name']}"),
+          ));
+       }
+    }
+    
+    return markers;
   }
 }

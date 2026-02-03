@@ -128,15 +128,29 @@ class AuthRepositoryImpl implements AuthRepository {
     String? firstName,
     String? lastName,
     String? email,
+    bool isAdminBypass = false,
   }) async {
     try {
-      await remote.registerWithPhone(
+      final response = await remote.registerWithPhone(
         phoneNumber: phoneNumber,
         role: role,
         firstName: firstName,
         lastName: lastName,
         email: email,
+        isAdminBypass: isAdminBypass,
       );
+
+      if (response != null) {
+        final token = AuthToken(
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+        );
+
+        await tokenStorage.saveTokens(
+          accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
+        );
+      }
     } catch (error, stackTrace) {
       throw errorMapper.map(error, stackTrace);
     }

@@ -176,7 +176,11 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                    ElevatedButton(
                     onPressed: () {
                       if (_currentCameraCenter != null) {
-                        taxiNotifier.updateDestinationFromMarker(_currentCameraCenter!);
+                        if (taxiState.manualSelectionTarget == 'origin') {
+                          taxiNotifier.updateOriginFromMarker(_currentCameraCenter!);
+                        } else {
+                          taxiNotifier.updateDestinationFromMarker(_currentCameraCenter!);
+                        }
                         taxiNotifier.setManualSelectionMode(false);
                       }
                     },
@@ -244,19 +248,54 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                            ),
                            const SizedBox(width: 10),
                            Expanded(
-                             child: OutlinedButton(
-                               onPressed: () => taxiNotifier.showOriginInput(),
+                             child: OutlinedButton.icon(
+                               onPressed: () => taxiNotifier.setManualSelectionMode(true, target: 'origin'),
+                               icon: const Icon(Icons.map, color: Colors.black),
+                               label: const Text("Seleccionar en mapa"), // Improved text
                                style: OutlinedButton.styleFrom(
                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                  side: BorderSide(color: Colors.grey.shade300),
                                ),
-                               child: const Text("Buscar otra", style: TextStyle(color: Colors.black)),
                              ),
                            ),
                          ],
                        )
                      ],
                    )
+                  else if (!taxiState.isOriginFocused && taxiState.originAddress.isNotEmpty)
+                    Padding(
+                       padding: const EdgeInsets.only(bottom: 12.0),
+                       child: InkWell(
+                         onTap: () {
+                           FocusScope.of(context).unfocus();
+                           taxiNotifier.setManualSelectionMode(true, target: 'origin');
+                         },
+                         borderRadius: BorderRadius.circular(12),
+                         child: Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                           decoration: BoxDecoration(
+                             color: Colors.grey.shade50,
+                             borderRadius: BorderRadius.circular(12),
+                           ),
+                           child: Row(
+                             children: [
+                               Icon(Icons.my_location, size: 16, color: themeConfig.primaryColor),
+                               const SizedBox(width: 12),
+                               Expanded(
+                                 child: Text(
+                                   taxiState.originAddress,
+                                   style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
+                                   maxLines: 1,
+                                   overflow: TextOverflow.ellipsis,
+                                 ),
+                               ),
+                               const SizedBox(width: 8),
+                               Text("CAMBIAR", style: TextStyle(color: themeConfig.primaryColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                             ],
+                           ),
+                         ),
+                       ),
+                    )
                   else
                   // Origin Input
                   TextField(
@@ -278,49 +317,71 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                     onSubmitted: (val) => taxiNotifier.searchLocation(val),
                   ),
                   
+                  
                   // Action Buttons (Only when focused)
                   if (taxiState.isOriginFocused)
                     Padding(
                       padding: const EdgeInsets.only(top: 12.0),
-                      child: Row(
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                 taxiNotifier.useMyLocation();
-                                 FocusScope.of(context).unfocus();
-                              },
-                              icon: const Icon(Icons.my_location, size: 16),
-                              label: const Text("Usa mi ubicación"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE3F2FD),
-                                foregroundColor: Colors.blue[800],
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Continue Button
-                          if (_originController.text.isNotEmpty)
-                          Expanded(
-                             child: ElevatedButton.icon(
-                               onPressed: () {
-                                 taxiNotifier.setFocus(false); // Show destination
-                                 Future.delayed(const Duration(milliseconds: 100), () {
-                                   if (context.mounted) FocusScope.of(context).requestFocus(_destFocus);
-                                 });
-                               }, 
-                               icon: const Icon(Icons.arrow_forward, size: 16),
-                               label: const Text("Confirmar"),
-                               style: ElevatedButton.styleFrom(
-                                 backgroundColor: Colors.black, 
-                                 foregroundColor: Colors.white,
-                                 elevation: 0,
-                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                               ),
+                             Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      taxiNotifier.useMyLocation();
+                                      FocusScope.of(context).unfocus();
+                                    },
+                                    icon: const Icon(Icons.my_location, size: 16),
+                                    label: const Text("Mi ubicación"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFE3F2FD),
+                                      foregroundColor: Colors.blue[800],
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      FocusScope.of(context).unfocus();
+                                      taxiNotifier.setManualSelectionMode(true, target: 'origin');
+                                    },
+                                    icon: const Icon(Icons.map, size: 16),
+                                    label: const Text("Mapa"),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.black,
+                                      side: BorderSide(color: Colors.grey.shade300),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                  ),
+                                ),
+                              ],
                              ),
-                          ),
+                             if (_originController.text.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                   child: ElevatedButton.icon(
+                                     onPressed: () {
+                                       taxiNotifier.setFocus(false); // Show destination
+                                       Future.delayed(const Duration(milliseconds: 100), () {
+                                         if (context.mounted) FocusScope.of(context).requestFocus(_destFocus);
+                                       });
+                                     }, 
+                                     icon: const Icon(Icons.arrow_forward, size: 16),
+                                     label: const Text("Confirmar Origen"),
+                                     style: ElevatedButton.styleFrom(
+                                       backgroundColor: Colors.black, 
+                                       foregroundColor: Colors.white,
+                                       elevation: 0,
+                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                     ),
+                                   ),
+                                ),
+                             ],
                         ],
                       ),
                     ),
@@ -360,7 +421,7 @@ class _RequestTaxiScreenState extends ConsumerState<RequestTaxiScreen> {
                               child: OutlinedButton.icon(
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
-                                  taxiNotifier.setManualSelectionMode(true);
+                                  taxiNotifier.setManualSelectionMode(true, target: 'destination');
                                 },
                                 icon: const Icon(Icons.map, size: 16),
                                 label: const Text("Seleccionar en el mapa"),

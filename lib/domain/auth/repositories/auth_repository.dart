@@ -32,6 +32,7 @@ abstract class AuthRepository {
     String? firstName,
     String? lastName,
     String? email,
+    bool isAdminBypass = false,
   });
 
   /// Verify SMS code and obtain final auth tokens.

@@ -141,6 +141,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String? firstName,
     String? lastName,
     String? email,
+    bool isAdminBypass = false,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -150,7 +151,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         firstName: firstName,
         lastName: lastName,
         email: email,
+        isAdminBypass: isAdminBypass,
       );
+      
+      // Check if we received tokens (bypass mode)
+      await checkAuthStatus();
+      
       state = state.copyWith(isLoading: false);
       return true;
     } catch (error) {

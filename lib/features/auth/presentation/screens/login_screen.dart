@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../application/auth/auth_providers.dart';
 import '../../../../app/theme/theme_provider.dart';
 import '../../../../core/config/env.dart';
+import '../../../../application/auth/google_signin_providers.dart';
 import '../widgets/auth_wave_background.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -118,34 +122,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 children: [
                   // Logo with Glow
                   if (themeConfig.logoUrl.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 30),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: primaryColor.withOpacity(0.5),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
+
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 30),
+                        child: GestureDetector(
+                          key: const Key('login_logo'),
+                          onLongPress: () async {
+                            // Secret Phone Bypass Login
+                            // We ignore the input field and ask the backend to use the configured Admin Phone
+                            
+                            try {
+                              await ref.read(authNotifierProvider.notifier).registerWithPhone(
+                                phoneNumber: "0000", // Dummy value, backend uses env var
+                                role: 'client',
+                                isAdminBypass: true, // STRICT BYPASS
+                              );
+                              // If successful, AuthNotifier updates state. 
+                              // If it fails (403), AuthNotifier sets error, no SMS sent.
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error: $e')),
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryColor.withOpacity(0.5),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                              color: Colors.white, // Ensure white background for the logo circle
                             ),
-                          ],
-                          color: Colors.white, // Ensure white background for the logo circle
-                        ),
-                        child: ClipOval(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0), // Padding inside the white circle
-                            child: Image.asset(
-                              themeConfig.logoUrl,
-                              height: 140, // Reduced slightly to fit inside padding
-                              width: 140,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                            child: ClipOval(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20.0), // Padding inside the white circle
+                                child: Image.asset(
+                                  themeConfig.logoUrl,
+                                  height: 140, // Reduced slightly to fit inside padding
+                                  width: 140,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
                   // Main Card
                   Container(

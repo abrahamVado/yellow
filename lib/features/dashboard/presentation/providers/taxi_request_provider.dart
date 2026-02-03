@@ -28,6 +28,7 @@ class TaxiRequestState {
   final String? errorMessage;
   final DateTime? scheduledTime;
   final bool isManualSelectionMode;
+  final String manualSelectionTarget; // 'origin' or 'destination'
   final String selectedPaymentMethod; // 'cash', 'card', 'google_pay'
   final List<dynamic> paymentMethods;
   final dynamic defaultPaymentMethod;
@@ -41,7 +42,7 @@ class TaxiRequestState {
     required this.sessionToken,
     this.routeInfo,
     this.isLoading = false,
-    this.isOriginFocused = true,
+    this.isOriginFocused = false,
     this.isOriginInputVisible = false,
     this.estimatedFare = 0.0,
     this.feeAmount = 0.0,
@@ -50,6 +51,7 @@ class TaxiRequestState {
     this.errorMessage,
     this.scheduledTime,
     this.isManualSelectionMode = false,
+    this.manualSelectionTarget = 'destination',
     this.selectedPaymentMethod = 'cash',
     this.paymentMethods = const [],
     this.defaultPaymentMethod,
@@ -72,7 +74,9 @@ class TaxiRequestState {
     List<dynamic>? myTrips,
     String? errorMessage,
     DateTime? scheduledTime,
+
     bool? isManualSelectionMode,
+    String? manualSelectionTarget,
     String? selectedPaymentMethod,
     List<dynamic>? paymentMethods,
     dynamic defaultPaymentMethod,
@@ -94,7 +98,9 @@ class TaxiRequestState {
       myTrips: myTrips ?? this.myTrips,
       errorMessage: errorMessage, // Reset error if not provided (or allow passing null)
       scheduledTime: scheduledTime ?? this.scheduledTime,
+
       isManualSelectionMode: isManualSelectionMode ?? this.isManualSelectionMode,
+      manualSelectionTarget: manualSelectionTarget ?? this.manualSelectionTarget,
       selectedPaymentMethod: selectedPaymentMethod ?? this.selectedPaymentMethod,
       paymentMethods: paymentMethods ?? this.paymentMethods,
       defaultPaymentMethod: defaultPaymentMethod ?? this.defaultPaymentMethod,
@@ -122,7 +128,9 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
   final Uuid _uuid = const Uuid();
 
   TaxiRequestNotifier(this._googleMapsService, this._dio, this._places)
-      : super(TaxiRequestState(sessionToken: const Uuid().v4()));
+      : super(TaxiRequestState(sessionToken: const Uuid().v4())) {
+    useMyLocation();
+  }
 
   void setFocus(bool isOrigin) {
     state = state.copyWith(isOriginFocused: isOrigin, predictions: []);
@@ -568,8 +576,12 @@ class TaxiRequestNotifier extends StateNotifier<TaxiRequestState> {
     }
   }
 
-  void setManualSelectionMode(bool enabled) {
-    state = state.copyWith(isManualSelectionMode: enabled, predictions: []);
+  void setManualSelectionMode(bool enabled, {String target = 'destination'}) {
+    state = state.copyWith(
+        isManualSelectionMode: enabled,
+        manualSelectionTarget: target,
+        predictions: []
+    );
   }
 }
 

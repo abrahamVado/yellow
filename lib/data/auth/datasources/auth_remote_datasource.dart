@@ -76,20 +76,28 @@ class AuthRemoteDataSource {
   }
 
   /// Register user with just phone number.
-  Future<void> registerWithPhone({
+  /// Returns [LoginResponseDto] if immediate login (bypass), null if OTP sent.
+  Future<LoginResponseDto?> registerWithPhone({
     required String phoneNumber,
     required String role,
     String? firstName,
     String? lastName,
     String? email,
+    bool isAdminBypass = false,
   }) async {
-    await dio.post('/auth/register-phone', data: {
+    final response = await dio.post<Map<String, dynamic>>('/auth/register-phone', data: {
       'phone_number': phoneNumber,
       'role': role,
       'first_name': firstName,
       'last_name': lastName,
       'email': email,
+      'is_admin_bypass': isAdminBypass,
     });
+    
+    if (response.data != null && response.data!.containsKey('access_token')) {
+        return LoginResponseDto.fromJson(response.data!);
+    }
+    return null;
   }
 
   /// Verify phone code and return auth tokens.

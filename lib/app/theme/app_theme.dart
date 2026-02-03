@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Global flag to enable test mode (disable fonts, etc)
+bool isTestMode = false;
+
 class AppThemeConfig {
   final Color primaryColor;
   final Color secondaryFontColor;
@@ -49,12 +52,14 @@ class AppThemeConfig {
 }
 
 ThemeData buildAppTheme(AppThemeConfig config) {
+  // Use global flag 'isTestMode' set by integration tests
+  
   return ThemeData(
     primaryColor: config.primaryColor,
     scaffoldBackgroundColor: const Color(0xFFF8F9FA), // Off-white for cleaner look
     
     // Modern Typography
-    textTheme: GoogleFonts.poppinsTextTheme().apply(
+    textTheme: (isTestMode ? ThemeData.light().textTheme : GoogleFonts.poppinsTextTheme()).apply(
       bodyColor: config.fontColor,
       displayColor: config.fontColor,
     ),
@@ -95,10 +100,15 @@ ThemeData buildAppTheme(AppThemeConfig config) {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
-        textStyle: GoogleFonts.poppins(
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-        ),
+        textStyle: isTestMode 
+            ? const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              )
+            : GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
       ),
     ),
     
